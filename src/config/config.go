@@ -26,6 +26,16 @@ type Config struct {
 		Analyze string `mapstructure:"analyze"` // 분석 프롬프트 파일 경로
 		Commit  string `mapstructure:"commit"`  // 커밋 프롬프트 파일 경로
 	} `mapstructure:"prompt"`
+	Optimize struct {
+		Mode   string `mapstructure:"mode"` // slim 또는 full
+		Filter struct {
+			Default string            `mapstructure:"default"` // 기본 필터 (1m)
+			Options map[string]string `mapstructure:"options"` // 필터 옵션들
+		} `mapstructure:"filter"`
+		Sparse struct {
+			Paths []string `mapstructure:"paths"` // Sparse Checkout 경로들
+		} `mapstructure:"sparse"`
+	} `mapstructure:"optimize"`
 }
 
 var (
@@ -126,6 +136,19 @@ ai:
 prompt:
   analyze: "prompt/analyze.md"  # 분석 프롬프트 파일 경로
   commit: "prompt/commit.md"   # 커밋 프롬프트 파일 경로
+
+# Git 최적화 설정
+optimize:
+  mode: "full"  # slim 또는 full
+  filter:
+    default: "1m"  # 기본 Partial Clone 필터
+    options:
+      minimal: "1m"     # 소스코드만 (1MB 미만)
+      basic: "25m"      # 코드 + 씬 파일
+      extended: "50m"   # 대부분 리소스 포함
+      full: "100m"      # 거의 전체
+  sparse:
+    paths: []  # Sparse Checkout 경로 목록
 `
 	return os.WriteFile(path, []byte(defaultConfig), 0644)
 }

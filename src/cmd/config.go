@@ -77,6 +77,39 @@ API 키 설정, 프롬프트 경로 설정 등을 수행할 수 있습니다.`,
 					}
 				}
 
+				// 최적화 설정
+				fmt.Println("\n[Git 최적화 설정]")
+				if optimize, ok := settings["optimize"].(map[string]interface{}); ok {
+					if mode, exists := optimize["mode"].(string); exists {
+						fmt.Printf("optimize.mode = %s\n", mode)
+					}
+					
+					if filter, ok := optimize["filter"].(map[string]interface{}); ok {
+						if defaultFilter, exists := filter["default"].(string); exists {
+							fmt.Printf("optimize.filter.default = %s\n", defaultFilter)
+						}
+						if options, ok := filter["options"].(map[string]interface{}); ok {
+							fmt.Println("optimize.filter.options:")
+							for key, value := range options {
+								fmt.Printf("  - %s: %v\n", key, value)
+							}
+						}
+					}
+					
+					if sparse, ok := optimize["sparse"].(map[string]interface{}); ok {
+						if paths, ok := sparse["paths"].([]interface{}); ok {
+							if len(paths) > 0 {
+								fmt.Println("optimize.sparse.paths:")
+								for _, path := range paths {
+									fmt.Printf("  - %v\n", path)
+								}
+							} else {
+								fmt.Println("optimize.sparse.paths = []")
+							}
+						}
+					}
+				}
+
 				return nil
 			}
 

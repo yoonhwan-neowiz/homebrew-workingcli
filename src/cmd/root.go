@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"workingcli/src/cmd/git"
+	"workingcli/src/cmd/optimized"
 	"workingcli/src/config"
 )
 
@@ -176,5 +177,7 @@ func init() {
 
 	// 서브커맨드 추가
 	rootCmd.AddCommand(NewConfigCmd())
-	// TODO: 다른 서브커맨드 추가
+	
+	// Git 최적화 명령어
+	rootCmd.AddCommand(optimized.NewOptimizedCmd())
 } 
