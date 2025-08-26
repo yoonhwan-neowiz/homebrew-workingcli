@@ -268,4 +268,42 @@ func GetDiffForAI(files []string, ref string, withDiff bool) (string, error) {
 	}
 
 	return result.String(), nil
+}
+
+// GetAvailableDiskSpace returns available disk space for the current directory
+func GetAvailableDiskSpace() (int64, error) {
+	cmd := exec.Command("df", "-k", ".")
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, fmt.Errorf("디스크 공간 확인 실패: %v", err)
+	}
+	
+	lines := strings.Split(string(output), "\n")
+	if len(lines) < 2 {
+		return 0, fmt.Errorf("df 출력 파싱 실패")
+	}
+	
+	// df 출력의 두 번째 줄 파싱
+	fields := strings.Fields(lines[1])
+	if len(fields) < 4 {
+		return 0, fmt.Errorf("df 출력 형식 오류")
+	}
+	
+	// 네 번째 필드가 사용 가능한 공간 (KB 단위)
+	availableKB, err := strconv.ParseInt(fields[3], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("사용 가능한 공간 파싱 실패: %v", err)
+	}
+	
+	// KB를 바이트로 변환
+	return availableKB * 1024, nil
+}
+
+// GetAvailableDiskSpaceFormatted returns formatted available disk space
+func GetAvailableDiskSpaceFormatted() string {
+	available, err := GetAvailableDiskSpace()
+	if err != nil {
+		return "확인 불가"
+	}
+	return HumanizeBytes(available)
 } 
