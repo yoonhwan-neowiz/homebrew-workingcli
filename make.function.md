@@ -102,13 +102,13 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (5/28)
+## 🎯 구현 진행 상황 (6/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
 - [x] 04. to-slim - SLIM 모드로 전환
 - [x] 05. to-full - FULL 모드로 복원
-- [ ] 06. expand-slim - 선택적 경로 확장
+- [x] 06. expand-slim - 선택적 경로 확장
 - [ ] 07. expand-filter - Partial Clone 필터 제거
 - [ ] 08. expand-10 - 히스토리 10개 확장
 - [ ] 09. expand-50 - 히스토리 50개 확장
@@ -309,6 +309,7 @@ Shallow: [활성/비활성] (depth: N)
 ```
 
 ### 06. expand-slim (`src/cmd/optimized/quick/06_expand_slim.go`)
+**상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: SLIM 상태에서 선택적 경로 확장
 **구현 내용**:
 ```bash
