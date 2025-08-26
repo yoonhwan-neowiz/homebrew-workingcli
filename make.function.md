@@ -102,7 +102,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (12/28)
+## 🎯 구현 진행 상황 (13/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -113,8 +113,8 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 08. expand (통합) - 히스토리 확장 (파라미터로 개수 지정)
 - [x] 09. expand-50 - (deprecated - expand 50 사용)
 - [x] 10. expand-100 - (deprecated - expand 100 사용)
-- [x] 11. find-merge - 병합 베이스 찾기
-- [ ] 12. check-merge - 병합 가능 여부 확인
+- [x] 11. auto-find-merge-base - 브랜치 병합점 자동 찾기
+- [x] 12. check-merge - 병합 가능 여부 확인
 - [ ] 13. clone-slim - 최적화된 클론
 - [x] 14. migrate - (deprecated - to-slim 사용)
 - [ ] 15. performance - 성능 최적화 설정
@@ -382,24 +382,26 @@ ga opt quick expand 50
 ga opt quick expand 100
 ```
 
-### 11. find-merge (`src/cmd/optimized/quick/11_find_merge.go`)
+### 11. auto-find-merge-base (`src/cmd/optimized/quick/11_auto_find_merge_base.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
-**목적**: 두 브랜치의 머지베이스 찾기
+**목적**: 두 브랜치의 머지베이스 자동 찾기 (히스토리 자동 확장)
 **구현 내용**:
 ```bash
-# 사용자 입력: branch1, branch2
+# 현재 브랜치와 입력받은 타겟 브랜치 비교
 
 1. 머지베이스 찾기 시도
-   git merge-base <branch1> <branch2>
+   git merge-base <current-branch> <target-branch>
 
 2. 실패시 점진적 확장
    - git fetch --deepen=10
    - 재시도
    - 필요시 계속 확장
+   - 최종적으로 --unshallow
 
 3. 결과 표시
    - 머지베이스 커밋 해시
    - 필요했던 depth
+   - 각 브랜치까지의 거리
 ```
 
 ### 12. check-merge (`src/cmd/optimized/quick/12_check_merge.go`)
@@ -807,15 +809,15 @@ feat(opt): implement 10-expand-100 - extend history by 100 commits
 test(opt): add tests for 10-expand-100 depth expansion
 docs(opt): document 10-expand-100 history extension
 
-# 11. find-merge
-feat(opt): implement 11-find-merge - locate merge base between branches
-test(opt): add tests for 11-find-merge base detection
-docs(opt): document 11-find-merge merge analysis
+# 11. auto-find-merge-base
+feat(opt): implement 11-auto-find-merge-base - automatically locate merge base
+test(opt): add tests for 11-auto-find-merge-base detection
+docs(opt): document 11-auto-find-merge-base functionality
 
-# 12. check-merge
-feat(opt): implement 12-check-merge - verify merge compatibility
-test(opt): add tests for 12-check-merge conflict detection
-docs(opt): document 12-check-merge merge verification
+# 12. check-merge-base
+feat(opt): implement 12-check-merge-base - verify merge base existence
+test(opt): add tests for 12-check-merge-base validation
+docs(opt): document 12-check-merge-base functionality
 ```
 
 ### Setup 카테고리 (초기 설정)

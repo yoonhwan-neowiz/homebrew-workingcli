@@ -54,8 +54,8 @@ func NewOptimizedCmd() *cobra.Command {
 		quick.NewExpand10Cmd(),      // 8. Expand 10
 		quick.NewExpand50Cmd(),      // 9. Expand 50
 		quick.NewExpand100Cmd(),     // 10. Expand 100
-		quick.NewFindMergeCmd(),     // 11. Find Merge Base
-		quick.NewCheckMergeCmd(),    // 12. Check Merge
+		quick.NewAutoFindMergeBaseCmd(),  // 11. Auto Find Merge Base
+		quick.NewCheckMergeBaseCmd(),     // 12. Check Merge Base
 	)
 	
 	// Setup 카테고리

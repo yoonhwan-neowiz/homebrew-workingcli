@@ -104,6 +104,8 @@ func showWorkflowGuide() {
 	commandColor.Println("     ga optimized expand-slim             # 대화형 경로 선택")
 	commandColor.Println("     ga optimized expand-path <path>      # 특정 경로 추가")
 	commandColor.Println("     ga optimized quick expand [N]        # 히스토리 N개 확장 (기본 10)")
+	commandColor.Println("     ga optimized quick auto-find-merge-base  # 머지베이스 자동 찾기")
+	commandColor.Println("     ga optimized quick check-merge-base      # 머지베이스 확인")
 
 	// 권장 사용 패턴
 	headerColor.Println("\n\n💡 권장 사용 패턴")

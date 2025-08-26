@@ -11,22 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewFindMergeCmd creates the Find Merge Base command
-func NewFindMergeCmd() *cobra.Command {
+// NewAutoFindMergeBaseCmd creates the Auto Find Merge Base command
+func NewAutoFindMergeBaseCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "find-merge",
-		Short: "브랜치 병합점 찾기",
-		Long: `두 브랜치가 만나는 공통 조상 커밋(merge-base)을 찾습니다.
-병합 가능성을 판단하는 기준점을 제공합니다.`,
+		Use:   "auto-find-merge-base",
+		Short: "브랜치 병합점 자동 찾기",
+		Long: `두 브랜치가 만나는 공통 조상 커밋(merge-base)을 자동으로 찾습니다.
+필요 시 히스토리를 자동 확장하며 병합 가능성을 판단하는 기준점을 제공합니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runFindMerge()
+			runAutoFindMergeBase()
 		},
 	}
 }
 
-func runFindMerge() {
-	fmt.Println("🔍 브랜치 병합점 찾기")
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━")
+func runAutoFindMergeBase() {
+	fmt.Println("🔍 브랜치 병합점 자동 찾기")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━")
 	
 	// Git 저장소 확인
 	if !utils.IsGitRepository() {
@@ -34,14 +34,17 @@ func runFindMerge() {
 		os.Exit(1)
 	}
 	
-	// 브랜치 입력받기
-	branch1 := getBranchInput("첫 번째 브랜치명을 입력하세요")
-	branch2 := getBranchInput("두 번째 브랜치명을 입력하세요")
+	// 현재 브랜치 확인
+	currentBranch := utils.GetCurrentBranch()
+	fmt.Printf("📍 현재 브랜치: %s\n", currentBranch)
 	
-	fmt.Printf("\n📊 %s와 %s의 병합점을 찾는 중...\n\n", branch1, branch2)
+	// 비교할 브랜치 입력받기
+	targetBranch := getBranchInput("비교할 브랜치명을 입력하세요")
+	
+	fmt.Printf("\n📊 %s와 %s의 병합점을 찾는 중...\n\n", currentBranch, targetBranch)
 	
 	// 머지베이스 찾기 시도
-	mergeBase, depth, err := findMergeBase(branch1, branch2)
+	mergeBase, depth, err := findMergeBase(currentBranch, targetBranch)
 	
 	if err != nil {
 		fmt.Printf("❌ 오류: 병합점을 찾을 수 없습니다.\n")
@@ -64,7 +67,7 @@ func runFindMerge() {
 	showCommitInfo(mergeBase)
 	
 	// 각 브랜치까지의 거리 표시
-	showDistanceFromBase(branch1, branch2, mergeBase)
+	showDistanceFromBase(currentBranch, targetBranch, mergeBase)
 }
 
 func getBranchInput(prompt string) string {
@@ -101,40 +104,24 @@ func getBranchInput(prompt string) string {
 func showBranches() {
 	fmt.Println("\n📋 사용 가능한 브랜치:")
 	
-	// 로컬 브랜치
-	cmd := exec.Command("git", "branch")
-	output, _ := cmd.Output()
-	if len(output) > 0 {
+	localBranches, remoteCount := utils.GetBranches()
+	
+	// 로컬 브랜치 표시
+	if len(localBranches) > 0 {
 		fmt.Println("  [로컬]")
-		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-		for _, line := range lines {
-			fmt.Printf("    %s\n", strings.TrimSpace(line))
+		for _, branch := range localBranches {
+			fmt.Printf("    %s\n", branch)
 		}
 	}
 	
-	// 원격 브랜치 (간략히)
-	cmd = exec.Command("git", "branch", "-r")
-	output, _ = cmd.Output()
-	if len(output) > 0 {
-		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-		if len(lines) > 0 {
-			fmt.Printf("  [원격] %d개 브랜치 (예: origin/main)\n", len(lines))
-		}
+	// 원격 브랜치 개수 표시
+	if remoteCount > 0 {
+		fmt.Printf("  [원격] %d개 브랜치 (예: origin/main)\n", remoteCount)
 	}
 }
 
 func branchExists(branch string) bool {
-	// 로컬 브랜치 확인
-	cmd := exec.Command("git", "rev-parse", "--verify", branch)
-	err := cmd.Run()
-	if err == nil {
-		return true
-	}
-	
-	// 원격 브랜치 확인
-	cmd = exec.Command("git", "rev-parse", "--verify", "origin/"+branch)
-	err = cmd.Run()
-	return err == nil
+	return utils.BranchExists(branch)
 }
 
 func findMergeBase(branch1, branch2 string) (string, int, error) {
@@ -191,18 +178,7 @@ func findMergeBase(branch1, branch2 string) (string, int, error) {
 }
 
 func tryFindMergeBase(branch1, branch2 string) (string, error) {
-	cmd := exec.Command("git", "merge-base", branch1, branch2)
-	output, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	
-	mergeBase := strings.TrimSpace(string(output))
-	if mergeBase == "" {
-		return "", fmt.Errorf("머지베이스를 찾을 수 없습니다")
-	}
-	
-	return mergeBase, nil
+	return utils.FindMergeBase(branch1, branch2)
 }
 
 func showCommitInfo(commit string) {
@@ -240,17 +216,14 @@ func showDistanceFromBase(branch1, branch2, mergeBase string) {
 }
 
 func getDistanceFromBase(branch, base string) string {
-	// branch에만 있는 커밋 수
-	cmd := exec.Command("git", "rev-list", "--count", base+".."+branch)
-	output, err := cmd.Output()
+	count, err := utils.GetBranchDistance(branch, base)
 	if err != nil {
 		return "알 수 없음"
 	}
 	
-	count := strings.TrimSpace(string(output))
-	if count == "0" {
+	if count == 0 {
 		return "동일함"
 	}
 	
-	return count + "개 커밋 ahead"
+	return fmt.Sprintf("%d개 커밋 ahead", count)
 }

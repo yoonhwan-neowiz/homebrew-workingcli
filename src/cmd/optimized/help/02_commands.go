@@ -39,8 +39,8 @@ func printCommandsList() {
 	fmt.Println("  8. expand       - 히스토리 확장 (기본 10개, 파라미터로 지정 가능)")
 	fmt.Println("  9. expand-50    - (deprecated - expand 50 사용)")
 	fmt.Println(" 10. expand-100   - (deprecated - expand 100 사용)")
-	fmt.Println(" 11. find-merge   - 병합 베이스 찾기")
-	fmt.Println(" 12. check-merge  - 병합 가능 여부 확인")
+	fmt.Println(" 11. auto-find-merge-base - 병합 베이스 자동 찾기 (히스토리 자동 확장)")
+	fmt.Println(" 12. check-merge-base     - 병합 베이스 확인 (현재 히스토리에서만)")
 	
 	// Setup 카테고리
 	fmt.Println("\n🛠️ Setup (초기 설정)")

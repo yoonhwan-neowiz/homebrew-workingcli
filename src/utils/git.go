@@ -488,3 +488,107 @@ func TruncateString(s string, maxLen int) string {
 	}
 	return s[:maxLen-3] + "..."
 }
+
+// GetCurrentBranch returns the current branch name
+func GetCurrentBranch() string {
+	cmd := exec.Command("git", "branch", "--show-current")
+	output, err := cmd.Output()
+	if err != nil {
+		// fallback: symbolic-ref 사용
+		cmd = exec.Command("git", "symbolic-ref", "--short", "HEAD")
+		output, err = cmd.Output()
+		if err != nil {
+			return "HEAD"
+		}
+	}
+	return strings.TrimSpace(string(output))
+}
+
+// BranchExists checks if a branch exists (local or remote)
+func BranchExists(branch string) bool {
+	// 로컬 브랜치 확인
+	cmd := exec.Command("git", "rev-parse", "--verify", branch)
+	err := cmd.Run()
+	if err == nil {
+		return true
+	}
+	
+	// 원격 브랜치 확인
+	cmd = exec.Command("git", "rev-parse", "--verify", "origin/"+branch)
+	err = cmd.Run()
+	return err == nil
+}
+
+// HasUncommittedChanges checks if there are uncommitted changes
+func HasUncommittedChanges() bool {
+	cmd := exec.Command("git", "status", "--porcelain")
+	output, _ := cmd.Output()
+	return len(strings.TrimSpace(string(output))) > 0
+}
+
+// FindMergeBase attempts to find merge base between two branches
+func FindMergeBase(branch1, branch2 string) (string, error) {
+	cmd := exec.Command("git", "merge-base", branch1, branch2)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	
+	mergeBase := strings.TrimSpace(string(output))
+	if mergeBase == "" {
+		return "", fmt.Errorf("머지베이스를 찾을 수 없습니다")
+	}
+	
+	return mergeBase, nil
+}
+
+// GetShortCommit returns short version of commit hash
+func GetShortCommit(commit string) string {
+	if len(commit) > 7 {
+		return commit[:7]
+	}
+	return commit
+}
+
+// GetBranchDistance returns the number of commits between base and branch
+func GetBranchDistance(branch, base string) (int, error) {
+	cmd := exec.Command("git", "rev-list", "--count", base+".."+branch)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, err
+	}
+	
+	count, err := strconv.Atoi(strings.TrimSpace(string(output)))
+	if err != nil {
+		return 0, err
+	}
+	
+	return count, nil
+}
+
+// GetBranches returns list of branches (local and remote counts)
+func GetBranches() ([]string, int) {
+	localBranches := []string{}
+	
+	// 로컬 브랜치
+	cmd := exec.Command("git", "branch")
+	output, _ := cmd.Output()
+	if len(output) > 0 {
+		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		for _, line := range lines {
+			branch := strings.TrimSpace(strings.TrimPrefix(line, "*"))
+			localBranches = append(localBranches, branch)
+		}
+	}
+	
+	// 원격 브랜치 개수
+	cmd = exec.Command("git", "branch", "-r")
+	output, _ = cmd.Output()
+	remoteCount := 0
+	if len(output) > 0 {
+		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		remoteCount = len(lines)
+	}
+	
+	return localBranches, remoteCount
+}
