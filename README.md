@@ -1,6 +1,6 @@
 # WorkingCli (ga)
 
-Git 작업을 혁신적으로 개선하는 AI 기반 CLI 도구입니다. 복잡한 Git 명령어를 직관적인 대화형 인터페이스로 변환하고, AI를 활용한 자동 커밋 메시지 생성으로 개발 생산성을 극대화합니다.
+Git 작업을 혁신적으로 개선하는 AI 기반 CLI 도구입니다. 대용량 Git 저장소 최적화부터 AI 커밋 메시지 생성까지, 개발 생산성을 극대화하는 올인원 솔루션.
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.19+-00ADD8?logo=go&logoColor=white)](https://go.dev)
@@ -8,31 +8,33 @@ Git 작업을 혁신적으로 개선하는 AI 기반 CLI 도구입니다. 복잡
 
 ## 🎯 왜 WorkingCli인가?
 
-- **🚀 생산성 향상**: AI가 생성하는 정확한 커밋 메시지로 시간 절약
+- **💾 대용량 저장소 최적화**: Partial Clone & Sparse Checkout으로 획기적인 용량 절감
+- **🚀 생산성 향상**: AI 커밋 메시지 자동 생성으로 시간 절약
 - **🎨 직관적 UX**: 복잡한 Git 작업을 대화형 인터페이스로 단순화
-- **🔧 유연한 구조**: 프로젝트별 설정으로 팀 협업 최적화
 - **🤖 AI 통합**: Claude와 OpenAI를 자유롭게 전환하며 사용
 
 ## 🔑 핵심 기능
 
-### 대화형 Stage/Unstage
-- 파일 번호로 간편한 선택/해제
-- 실시간 상태 미리보기
-- AI 커밋 메시지 즉시 생성
+### 🗜️ Git 저장소 최적화 (NEW!)
+- **Partial Clone & Sparse Checkout**: 필요한 파일만 다운로드
+- **Smart Shallow**: 점진적 히스토리 확장으로 안전한 병합
+- **28개 최적화 명령어**: SLIM/FULL 모드 전환, 선택적 확장
+- **서브모듈 최적화**: 모든 서브모듈 일괄 처리
 
-### AI 커밋 메시지 자동 생성
+### 🤖 AI 커밋 메시지 자동 생성
 - 변경사항을 분석하여 규칙에 맞는 메시지 생성
 - 커밋 컨벤션 자동 적용 (feat, fix, refactor 등)
 - 사용자 키워드 기반 커스터마이징
 
-### 스마트 충돌 해결
+### 📂 대화형 Stage/Unstage
+- 파일 번호로 간편한 선택/해제
+- 실시간 상태 미리보기
+- AI 커밋 메시지 즉시 생성
+
+### 🔀 스마트 충돌 해결
 - 충돌 파일 시각화
 - 3-way 병합 옵션 제공
 - 단계별 해결 가이드
-
-### Git 명령어 통합
-- 기본 Git 명령어 완벽 지원
-- 일관된 인터페이스로 학습 곡선 감소
 
 ## 🚀 빠른 시작
 
@@ -57,6 +59,11 @@ ga stage     # 또는 단순히 'ga'
 # AI 커밋 메시지 생성
 ga commit    # diff 기반 자동 생성
 ga commit -k "로그인 기능"  # 키워드 지정
+
+# 저장소 최적화 (NEW!)
+ga optimized quick status     # 현재 최적화 상태 확인
+ga optimized quick to-slim    # SLIM 모드로 전환
+ga optimized help commands    # 28개 최적화 명령어 목록
 
 # 충돌 해결
 ga resolve
@@ -103,7 +110,34 @@ feat: 사용자 인증 모듈 추가
 이 메시지를 사용하시겠습니까? (Y/n)
 ```
 
-### 3. 충돌 해결
+### 3. 대용량 저장소 최적화 (NEW!)
+
+```bash
+$ ga optimized quick status
+
+📊 저장소 최적화 상태
+━━━━━━━━━━━━━━━━━━
+모드: FULL (미최적화)
+Partial Clone: 비활성
+Sparse Checkout: 비활성
+디스크 사용: 103GB
+━━━━━━━━━━━━━━━━━━
+
+$ ga optimized quick to-slim
+
+🚀 SLIM 모드로 전환 중...
+✓ Partial Clone 필터 적용 (blob:limit=1m)
+✓ Sparse Checkout 활성화
+✓ 불필요한 객체 정리 완료
+
+📊 최적화 결과
+━━━━━━━━━━━━━━━━━━
+이전: 103GB → 현재: 30MB
+절감: 99.97%
+━━━━━━━━━━━━━━━━━━
+```
+
+### 4. 충돌 해결
 
 ```bash
 $ ga resolve
@@ -124,24 +158,27 @@ $ ga resolve
 ```
 WorkingCli/
 ├── src/
-│   ├── cmd/          # CLI 명령어 구현 (Cobra 프레임워크)
-│   │   ├── git/      # Git 명령어 래퍼
-│   │   ├── stage.go  # 대화형 스테이징
-│   │   ├── commit.go # AI 커밋 메시지
-│   │   └── resolve.go # 충돌 해결
-│   ├── ai/           # AI 클라이언트
-│   │   ├── client.go # 인터페이스 정의
-│   │   ├── claude.go # Claude API 구현
-│   │   └── openai.go # OpenAI API 구현
-│   ├── config/       # 설정 관리 (Viper)
-│   └── utils/        # 공통 유틸리티
-├── prompt/           # AI 프롬프트 템플릿
-│   ├── commit.md     # 커밋 메시지 생성 템플릿
-│   └── analyze.md    # 코드 분석 템플릿
-├── test/             # 테스트 코드
-└── .gaconfig/        # 프로젝트별 설정 (Git 루트에 생성)
-    ├── config.yaml
-    └── prompt/       # 커스텀 프롬프트
+│   ├── cmd/
+│   │   ├── optimized/    # Git 저장소 최적화 명령어 (28개)
+│   │   │   ├── help/     # 도움말 및 가이드
+│   │   │   ├── quick/    # 자주 사용하는 명령어
+│   │   │   ├── setup/    # 초기 설정
+│   │   │   ├── workspace/# 작업 공간 관리
+│   │   │   ├── advanced/ # 고급 기능
+│   │   │   └── submodule/# 서브모듈 관리
+│   │   ├── git/          # Git 명령어 래퍼
+│   │   ├── stage.go      # 대화형 스테이징
+│   │   ├── commit.go     # AI 커밋 메시지
+│   │   └── resolve.go    # 충돌 해결
+│   ├── ai/               # AI 클라이언트
+│   │   ├── client.go     # 인터페이스 정의
+│   │   ├── claude.go     # Claude API 구현
+│   │   └── openai.go     # OpenAI API 구현
+│   ├── config/           # 설정 관리 (Viper)
+│   └── utils/            # 공통 유틸리티
+├── prompt/               # AI 프롬프트 템플릿
+├── test/                 # 테스트 코드
+└── .gaconfig/            # 프로젝트별 설정
 ```
 
 ## ⚙️ 설정
@@ -171,6 +208,16 @@ prompt:
 git:
   defaultBranch: main
   commitConvention: conventional  # conventional, angular, custom
+
+# 저장소 최적화 설정
+optimized:
+  mode: slim               # slim 또는 full
+  partialClone: blob:limit=1m  # Partial Clone 필터 크기
+  sparseCheckout:          # Sparse Checkout 경로
+    - src/
+    - Assets/Scripts/
+    - ProjectSettings/
+  shallowDepth: 1          # Shallow Clone 깊이
 ```
 
 ## 🛠️ 기술 스택
