@@ -4,8 +4,8 @@
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (0/28)
-- [ ] 01. workflow - Git 최적화 워크플로우 가이드
+## 🎯 구현 진행 상황 (1/28)
+- [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [ ] 02. commands - 전체 명령어 목록
 - [ ] 03. status - 현재 최적화 상태 확인
 - [ ] 04. to-slim - SLIM 모드로 전환
@@ -39,6 +39,7 @@
 ## 📚 함수별 구현 상세
 
 ### 01. workflow (`src/cmd/optimized/help/01_workflow.go`)
+**상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: Git 최적화 워크플로우 가이드 표시
 **구현 내용**:
 ```
@@ -526,3 +527,343 @@ func getDiskUsage(path string) string {
 - [ ] 사용자 친화적인 출력
 - [ ] 테스트 완료
 - [ ] 문서화 완료
+
+---
+
+## 🔖 커밋 메시지 규약
+
+### 기본 형식
+```
+<type>(<scope>): <subject>
+
+[optional body]
+[optional footer]
+```
+
+### 타입 정의
+- `feat(opt)`: 새로운 최적화 기능 구현
+- `test(opt)`: 최적화 기능 테스트 추가
+- `docs(opt)`: 최적화 기능 문서화
+- `fix(opt)`: 최적화 기능 버그 수정
+- `refactor(opt)`: 최적화 기능 코드 리팩토링
+- `perf(opt)`: 최적화 기능 성능 개선
+- `chore(opt)`: 빌드, 설정 등 기타 변경
+
+### 커밋 메시지 작성 규칙
+1. **제목은 50자 이내**로 작성
+2. **명령문 형태**로 작성 (implement, add, fix, update)
+3. **함수 번호와 이름**을 명시
+4. **구체적인 변경 내용** 포함
+5. **본문은 한글로 작성** (제목과 기술적 용어 제외)
+
+### 단계별 커밋 예시
+```bash
+# 구현 단계
+feat(opt): implement 03-status - Git repository optimization status check
+
+# 테스트 단계
+test(opt): add tests for 03-status command functionality
+
+# 문서화 단계
+docs(opt): update documentation for 03-status command usage
+```
+
+---
+
+## 📝 함수별 커밋 메시지 템플릿
+
+### Help 카테고리 (도움말)
+```bash
+# 01. workflow
+feat(opt): implement 01-workflow - Git optimization workflow guide
+test(opt): add tests for 01-workflow help command
+docs(opt): document 01-workflow usage and examples
+
+# 02. commands  
+feat(opt): implement 02-commands - complete command list display
+test(opt): add tests for 02-commands help display
+docs(opt): document 02-commands help system
+```
+
+### Quick 카테고리 (빠른 실행)
+```bash
+# 03. status
+feat(opt): implement 03-status - repository optimization status check
+test(opt): add tests for 03-status metrics collection
+docs(opt): document 03-status output format and usage
+
+# 04. to-slim
+feat(opt): implement 04-to-slim - convert repository to SLIM mode
+test(opt): add tests for 04-to-slim conversion process
+docs(opt): document 04-to-slim migration workflow
+
+# 05. to-full
+feat(opt): implement 05-to-full - restore repository to FULL mode
+test(opt): add tests for 05-to-full restoration process
+docs(opt): document 05-to-full recovery workflow
+
+# 06. expand-slim
+feat(opt): implement 06-expand-slim - selective path expansion
+test(opt): add tests for 06-expand-slim path addition
+docs(opt): document 06-expand-slim usage scenarios
+
+# 07. expand-filter
+feat(opt): implement 07-expand-filter - remove Partial Clone filter
+test(opt): add tests for 07-expand-filter removal process
+docs(opt): document 07-expand-filter filter management
+
+# 08. expand-10
+feat(opt): implement 08-expand-10 - extend history by 10 commits
+test(opt): add tests for 08-expand-10 depth expansion
+docs(opt): document 08-expand-10 history extension
+
+# 09. expand-50
+feat(opt): implement 09-expand-50 - extend history by 50 commits
+test(opt): add tests for 09-expand-50 depth expansion
+docs(opt): document 09-expand-50 history extension
+
+# 10. expand-100
+feat(opt): implement 10-expand-100 - extend history by 100 commits
+test(opt): add tests for 10-expand-100 depth expansion
+docs(opt): document 10-expand-100 history extension
+
+# 11. find-merge
+feat(opt): implement 11-find-merge - locate merge base between branches
+test(opt): add tests for 11-find-merge base detection
+docs(opt): document 11-find-merge merge analysis
+
+# 12. check-merge
+feat(opt): implement 12-check-merge - verify merge compatibility
+test(opt): add tests for 12-check-merge conflict detection
+docs(opt): document 12-check-merge merge verification
+```
+
+### Setup 카테고리 (초기 설정)
+```bash
+# 13. clone-slim
+feat(opt): implement 13-clone-slim - optimized repository cloning
+test(opt): add tests for 13-clone-slim initialization
+docs(opt): document 13-clone-slim setup process
+
+# 14. migrate
+feat(opt): implement 14-migrate - convert existing repo to SLIM
+test(opt): add tests for 14-migrate conversion workflow
+docs(opt): document 14-migrate migration strategy
+
+# 15. performance
+feat(opt): implement 15-performance - apply performance settings
+test(opt): add tests for 15-performance configuration
+docs(opt): document 15-performance optimization settings
+```
+
+### Workspace 카테고리 (작업공간)
+```bash
+# 16. expand-path
+feat(opt): implement 16-expand-path - add specific paths to sparse
+test(opt): add tests for 16-expand-path path management
+docs(opt): document 16-expand-path selective expansion
+
+# 17. filter-branch
+feat(opt): implement 17-filter-branch - branch-specific filters
+test(opt): add tests for 17-filter-branch filter application
+docs(opt): document 17-filter-branch branch filtering
+
+# 18. clear-filter
+feat(opt): implement 18-clear-filter - remove all filters
+test(opt): add tests for 18-clear-filter cleanup process
+docs(opt): document 18-clear-filter filter removal
+
+# 19. restore-branch
+feat(opt): implement 19-restore-branch - restore specific branch
+test(opt): add tests for 19-restore-branch restoration
+docs(opt): document 19-restore-branch branch recovery
+```
+
+### Advanced 카테고리 (고급)
+```bash
+# 20. shallow
+feat(opt): implement 20-shallow - reduce history to depth 1
+test(opt): add tests for 20-shallow history reduction
+docs(opt): document 20-shallow shallow conversion
+
+# 21. unshallow
+feat(opt): implement 21-unshallow - restore complete history
+test(opt): add tests for 21-unshallow history restoration
+docs(opt): document 21-unshallow full recovery
+
+# 22. check-shallow
+feat(opt): implement 22-check-shallow - verify shallow status
+test(opt): add tests for 22-check-shallow status detection
+docs(opt): document 22-check-shallow status checking
+
+# 23. check-filter
+feat(opt): implement 23-check-filter - inspect filter settings
+test(opt): add tests for 23-check-filter configuration check
+docs(opt): document 23-check-filter filter inspection
+
+# 24. backup-config
+feat(opt): implement 24-backup-config - backup/restore settings
+test(opt): add tests for 24-backup-config save/load
+docs(opt): document 24-backup-config configuration management
+```
+
+### Submodule 카테고리 (서브모듈)
+```bash
+# 25. shallow-all
+feat(opt): implement 25-shallow-all - shallow all submodules
+test(opt): add tests for 25-shallow-all batch processing
+docs(opt): document 25-shallow-all submodule optimization
+
+# 26. unshallow-all
+feat(opt): implement 26-unshallow-all - restore all submodules
+test(opt): add tests for 26-unshallow-all batch restoration
+docs(opt): document 26-unshallow-all submodule recovery
+
+# 27. optimize-all
+feat(opt): implement 27-optimize-all - optimize all submodules
+test(opt): add tests for 27-optimize-all batch optimization
+docs(opt): document 27-optimize-all comprehensive optimization
+
+# 28. status-all
+feat(opt): implement 28-status-all - check all submodule status
+test(opt): add tests for 28-status-all status collection
+docs(opt): document 28-status-all status reporting
+```
+
+---
+
+## 🌿 브랜치 전략
+
+### 브랜치 네이밍 규칙
+```bash
+# 기능 구현 브랜치
+feature/opt-<번호>-<함수명>
+
+# 예시:
+feature/opt-03-status
+feature/opt-04-to-slim
+feature/opt-13-clone-slim
+```
+
+### 브랜치 생성 및 작업 순서
+```bash
+# 1. 브랜치 생성
+git checkout -b feature/opt-03-status
+
+# 2. 구현 작업
+# ... 코드 작성 ...
+
+# 3. 커밋 (구현)
+git add src/cmd/optimized/quick/03_status.go
+git commit -m "feat(opt): implement 03-status - repository optimization status check"
+
+# 4. 테스트 추가
+# ... 테스트 작성 ...
+
+# 5. 커밋 (테스트)
+git add src/cmd/optimized/quick/03_status_test.go
+git commit -m "test(opt): add tests for 03-status metrics collection"
+
+# 6. 문서화
+# ... 문서 작성 ...
+
+# 7. 커밋 (문서)
+git add docs/optimized/03-status.md
+git commit -m "docs(opt): document 03-status output format and usage"
+
+# 8. PR 생성
+git push origin feature/opt-03-status
+```
+
+### PR (Pull Request) 규칙
+```markdown
+## PR 제목
+[OPT] Implement #<번호> <함수명> - <간단 설명>
+
+예시:
+[OPT] Implement #03 status - Git repository optimization status check
+
+## PR 본문 템플릿
+### 📌 구현 내용
+- [ ] 기능 구현 완료
+- [ ] 테스트 작성 완료
+- [ ] 문서화 완료
+
+### 📝 변경 사항
+- 구현한 기능의 주요 내용
+- 사용된 Git 명령어
+- 특별한 고려사항
+
+### 🧪 테스트 방법
+```bash
+# 테스트 실행 명령어
+go test ./src/cmd/optimized/quick/
+```
+
+### 📸 스크린샷
+(실행 결과 스크린샷 첨부)
+
+### ✅ 체크리스트
+- [ ] PRD 요구사항 충족
+- [ ] 에러 처리 구현
+- [ ] 사용자 친화적 출력
+- [ ] 코드 리뷰 반영
+```
+
+### 머지 전략
+1. **Feature Branch → Develop**: Squash and merge
+2. **Develop → Master**: Create a merge commit
+3. **Hotfix → Master**: Create a merge commit
+
+### 릴리스 태그
+```bash
+# 마일스톤별 태그
+v1.0.0-opt-help     # Help 카테고리 완료
+v1.1.0-opt-quick    # Quick 카테고리 완료
+v1.2.0-opt-setup    # Setup 카테고리 완료
+v1.3.0-opt-workspace # Workspace 카테고리 완료
+v1.4.0-opt-advanced # Advanced 카테고리 완료
+v1.5.0-opt-submodule # Submodule 카테고리 완료
+v2.0.0-opt-complete # 전체 최적화 기능 완료
+```
+
+---
+
+## ⚠️ 중요: 체크리스트 업데이트
+
+### 구현 완료 시 체크리스트 업데이트 필수
+각 함수 구현이 완료되면 반드시 다음 항목들을 업데이트해야 합니다:
+
+1. **진행 상황 업데이트** (상단 제목)
+   ```markdown
+   ## 🎯 구현 진행 상황 (1/28)  # 숫자 업데이트
+   ```
+
+2. **체크박스 업데이트** 
+   ```markdown
+   - [x] 01. workflow - Git 최적화 워크플로우 가이드  # 완료된 항목 체크
+   ```
+
+3. **구현 상태 표시** (함수별 구현 상세 섹션)
+   ```markdown
+   ### 01. workflow (`src/cmd/optimized/help/01_workflow.go`)
+   **상태**: ✅ 구현 완료 (2025-01-XX)  # 날짜 추가
+   ```
+
+### 업데이트 예시
+```bash
+# 구현 전
+- [ ] 01. workflow - Git 최적화 워크플로우 가이드
+
+# 구현 후  
+- [x] 01. workflow - Git 최적화 워크플로우 가이드
+```
+
+### 체크리스트 업데이트 커밋
+```bash
+docs(opt): update checklist for 01-workflow completion
+
+- Mark 01-workflow as completed
+- Update progress count (1/28)
+- Add completion date
+```
