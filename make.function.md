@@ -2,16 +2,29 @@
 
 ## 🎯 핵심 구현 전략 - AI 협업 워크플로우
 
+### ⚠️ 필수 규칙: Zen MCP를 통한 구현 위임 ⚠️
+**핵심 전략**: Claude의 컨텍스트를 절약하여 더 많은 작업을 수행할 수 있도록 합니다!
+- ✅ **Claude 역할**: 파일 읽기, 분석, 검증, 테스트 (컨텍스트 소량 사용)
+- ✅ **Gemini 역할**: 실제 코드 구현 작업 (Zen MCP를 통해 위임)
+- 📌 **효과**: 한 세션에서 더 많은 명령어를 구현 가능
+
 ### 구현 프로세스 (3단계 사이클)
 
-#### 1단계: Gemini 구현 (gemini-2.5-pro)
-- **입력 파일들**:
-  - `make.function.md` - 구현 가이드 및 프롬프트
-  - 타겟 구현 파일 (예: `src/cmd/optimized/quick/05_to_full.go`)
-  - `src/utils/utils.go` - 일반 유틸리티
-  - `src/utils/git.go` - Git 유틸리티
-- **수행**: Zen MCP를 통해 Gemini가 완전한 구현 생성
-- **산출물**: 구현 완료된 코드
+#### 1단계: Gemini 구현 (gemini-2.5-pro) - Zen MCP 활용
+- **Claude 준비 작업**:
+  - 필요한 파일들 확인 (Read 도구 사용 가능)
+  - 구현 명세 파악
+  - Zen MCP에 전달할 프롬프트 준비
+- **Gemini 구현 (Zen MCP)**:
+  - `mcp__zen__chat` 또는 `mcp__zen__thinkdeep` 사용
+  - 입력: make.function.md 명세, 타겟 파일, 유틸리티 파일들
+  - 출력: 완전히 구현된 코드
+- **명령 예시**: 
+  ```
+  "mcp__zen__chat으로 make.function.md의 05번 to-full 명세에 따라 
+   src/cmd/optimized/quick/05_to_full.go 구현해줘. 
+   utils/git.go와 utils/utils.go 유틸리티 활용"
+  ```
 
 #### 2단계: Claude 검증 및 개선 (claude-opus-4.1)
 - **검증 작업**:
