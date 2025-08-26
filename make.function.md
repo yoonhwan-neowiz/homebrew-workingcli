@@ -50,6 +50,46 @@ ga optimized quick to-full     # FULL 모드로 복원
 
 ---
 
+## 🔧 유틸리티 전략 및 지침
+
+### 패키지 구조
+```
+src/
+├── utils/           # 범용 유틸리티 패키지
+│   ├── utils.go    # 기본 유틸리티 (UI, 파일 처리 등)
+│   └── git.go      # Git 관련 유틸리티 함수
+├── cmd/
+│   ├── utils.go    # cmd 패키지 브릿지 (utils 패키지 재사용)
+│   └── optimized/
+│       └── quick/  # 최적화 명령어 구현
+```
+
+### 유틸리티 구성 방침
+1. **Git 관련 함수** (`src/utils/git.go`)
+   - Git 저장소 상태 확인 (IsGitRepository, GetOptimizationMode)
+   - Git 설정 조회 (GetPartialCloneFilter, IsSparseCheckoutEnabled)
+   - Git 정보 수집 (GetObjectInfo, GetSubmoduleInfo, GetDiskUsage)
+   - 파일 분석 (GetExcludedLargeFiles, GetLargestFilesInHistory)
+   - 포맷팅 헬퍼 (FormatSize, TruncateString)
+
+2. **일반 유틸리티** (`src/utils/utils.go`)
+   - 사용자 입력 처리 (Confirm, ConfirmWithDefault)
+   - Git 경로 처리 (UnescapeGitPath, ProcessGitPaths, DecodeGitPath)
+   - AI용 Diff 생성 (GetDiffForAI)
+   - 파일 유형 판단 (IsSourceCodeFile)
+   - 크기 변환 (HumanizeBytes)
+
+3. **브릿지 파일** (`src/cmd/utils.go`)
+   - utils 패키지의 필요한 함수들을 cmd 패키지로 재노출
+   - 패키지 경계를 깔끔하게 유지
+
+### 사용 가이드라인
+- 새로운 명령어 구현 시 기존 유틸리티 재사용 우선
+- Git 작업은 반드시 `utils/git.go`의 함수 활용
+- 중복 코드 발견 시 즉시 유틸리티로 추출
+- 유틸리티 함수는 단일 책임 원칙 준수
+- 에러 처리는 호출하는 쪽에서 수행
+
 ## 📚 함수별 구현 상세
 
 ### 01. workflow (`src/cmd/optimized/help/01_workflow.go`)
