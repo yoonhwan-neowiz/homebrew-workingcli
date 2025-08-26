@@ -104,7 +104,7 @@ func showWorkflowGuide() {
 	fmt.Println("  └─ 명령어:")
 	commandColor.Println("     ga optimized expand-slim             # 대화형 경로 선택")
 	commandColor.Println("     ga optimized expand-path <path>      # 특정 경로 추가")
-	commandColor.Println("     ga optimized expand-10/50/100        # 히스토리 확장")
+	commandColor.Println("     ga optimized quick expand [N]        # 히스토리 N개 확장 (기본 10)")
 
 	// 권장 사용 패턴
 	headerColor.Println("\n\n💡 권장 사용 패턴")

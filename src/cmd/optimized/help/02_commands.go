@@ -36,9 +36,9 @@ func printCommandsList() {
 	fmt.Println("  5. to-full      - FULL 모드로 복원 (전체 저장소)")
 	fmt.Println("  6. expand-slim  - 선택적 경로 확장")
 	fmt.Println("  7. expand-filter- Partial Clone 필터 제거")
-	fmt.Println("  8. expand-10    - 히스토리 10개 확장")
-	fmt.Println("  9. expand-50    - 히스토리 50개 확장")
-	fmt.Println(" 10. expand-100   - 히스토리 100개 확장")
+	fmt.Println("  8. expand       - 히스토리 확장 (기본 10개, 파라미터로 지정 가능)")
+	fmt.Println("  9. expand-50    - (deprecated - expand 50 사용)")
+	fmt.Println(" 10. expand-100   - (deprecated - expand 100 사용)")
 	fmt.Println(" 11. find-merge   - 병합 베이스 찾기")
 	fmt.Println(" 12. check-merge  - 병합 가능 여부 확인")
 	
@@ -73,6 +73,7 @@ func printCommandsList() {
 	fmt.Println("\n💡 사용 예시:")
 	fmt.Println("  ga optimized quick status        # 현재 상태 확인")
 	fmt.Println("  ga optimized quick to-slim       # SLIM 모드로 전환")
+	fmt.Println("  ga optimized quick expand 50     # 히스토리 50개 확장")
 	fmt.Println("  ga optimized setup clone-slim <url> <folder>  # 최적화 클론")
 	fmt.Println("\n자세한 사용법은 'ga optimized help workflow'를 참조하세요.")
 }

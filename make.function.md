@@ -102,7 +102,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (7/28)
+## 🎯 구현 진행 상황 (10/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -110,9 +110,9 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 05. to-full - FULL 모드로 복원
 - [x] 06. expand-slim - 선택적 경로 확장
 - [x] 07. expand-filter - Partial Clone 필터 제거
-- [ ] 08. expand-10 - 히스토리 10개 확장
-- [ ] 09. expand-50 - 히스토리 50개 확장
-- [ ] 10. expand-100 - 히스토리 100개 확장
+- [x] 08. expand (통합) - 히스토리 확장 (파라미터로 개수 지정)
+- [x] 09. expand-50 - (deprecated - expand 50 사용)
+- [x] 10. expand-100 - (deprecated - expand 100 사용)
 - [ ] 11. find-merge - 병합 베이스 찾기
 - [ ] 12. check-merge - 병합 가능 여부 확인
 - [ ] 13. clone-slim - 최적화된 클론
@@ -344,31 +344,42 @@ Shallow: [활성/비활성] (depth: N)
 4. 결과 확인
 ```
 
-### 08. expand-10 (`src/cmd/optimized/quick/08_expand_10.go`)
-**목적**: 히스토리 10개 커밋 확장
+### 08. expand (통합 명령어) (`src/cmd/optimized/quick/08_expand_10.go`)
+**상태**: ✅ 구현 완료 (2025-08-26)
+**목적**: 히스토리 확장 (파라미터로 개수 지정)
 **구현 내용**:
 ```bash
+# 사용법: ga opt quick expand [depth]
+# depth를 지정하지 않으면 기본값 10개
+
 1. 현재 depth 확인
-2. git fetch --deepen=10
+2. git fetch --deepen=N (N은 파라미터로 받은 값)
 3. 확장된 히스토리 확인
+
+# 사용 예시:
+ga opt quick expand        # 10개 확장 (기본값)
+ga opt quick expand 10     # 10개 확장
+ga opt quick expand 50     # 50개 확장  
+ga opt quick expand 100    # 100개 확장
+ga opt quick expand 66     # 66개 확장 (커스텀)
 ```
 
 ### 09. expand-50 (`src/cmd/optimized/quick/09_expand_50.go`)
-**목적**: 히스토리 50개 커밋 확장
+**상태**: ✅ 구현 완료 (2025-08-26) - deprecated
+**목적**: 히스토리 50개 커밋 확장 (deprecated - expand 50 사용)
 **구현 내용**:
 ```bash
-1. 현재 depth 확인
-2. git fetch --deepen=50
-3. 확장된 히스토리 확인
+# deprecated - 대신 사용:
+ga opt quick expand 50
 ```
 
 ### 10. expand-100 (`src/cmd/optimized/quick/10_expand_100.go`)
-**목적**: 히스토리 100개 커밋 확장
+**상태**: ✅ 구현 완료 (2025-08-26) - deprecated
+**목적**: 히스토리 100개 커밋 확장 (deprecated - expand 100 사용)
 **구현 내용**:
 ```bash
-1. 현재 depth 확인
-2. git fetch --deepen=100
-3. 확장된 히스토리 확인
+# deprecated - 대신 사용:
+ga opt quick expand 100
 ```
 
 ### 11. find-merge (`src/cmd/optimized/quick/11_find_merge.go`)
