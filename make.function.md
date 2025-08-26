@@ -789,15 +789,32 @@ git push origin feature/opt-03-status
 ```
 
 ### 릴리스 태그
+
+#### 태그 생성 시점
+카테고리별 모든 명령어가 완료되면 즉시 태그를 생성합니다:
+
+- **Help 카테고리** (1-2번): 2개 모두 완료 시 → `v1.0.0-opt-help`
+- **Quick 카테고리** (3-12번): 10개 모두 완료 시 → `v1.1.0-opt-quick`
+- **Setup 카테고리** (13-15번): 3개 모두 완료 시 → `v1.2.0-opt-setup`
+- **Workspace 카테고리** (16-19번): 4개 모두 완료 시 → `v1.3.0-opt-workspace`
+- **Advanced 카테고리** (20-24번): 5개 모두 완료 시 → `v1.4.0-opt-advanced`
+- **Submodule 카테고리** (25-28번): 4개 모두 완료 시 → `v1.5.0-opt-submodule`
+- **전체 완료**: 28개 모두 완료 시 → `v2.0.0-opt-complete`
+
+#### 태그 생성 명령어
 ```bash
-# 마일스톤별 태그
-v1.0.0-opt-help     # Help 카테고리 완료
-v1.1.0-opt-quick    # Quick 카테고리 완료
-v1.2.0-opt-setup    # Setup 카테고리 완료
-v1.3.0-opt-workspace # Workspace 카테고리 완료
-v1.4.0-opt-advanced # Advanced 카테고리 완료
-v1.5.0-opt-submodule # Submodule 카테고리 완료
-v2.0.0-opt-complete # 전체 최적화 기능 완료
+# 카테고리 완료 시 태그 생성
+git tag -a v1.0.0-opt-help -m "Complete Help category implementation (1-2)"
+git push origin v1.0.0-opt-help
+
+# 마일스톤별 태그 목록
+v1.0.0-opt-help      # Help 카테고리 완료 (1-2번)
+v1.1.0-opt-quick     # Quick 카테고리 완료 (3-12번)
+v1.2.0-opt-setup     # Setup 카테고리 완료 (13-15번)
+v1.3.0-opt-workspace # Workspace 카테고리 완료 (16-19번)
+v1.4.0-opt-advanced  # Advanced 카테고리 완료 (20-24번)
+v1.5.0-opt-submodule # Submodule 카테고리 완료 (25-28번)
+v2.0.0-opt-complete  # 전체 최적화 기능 완료 (1-28번)
 ```
 
 ---
