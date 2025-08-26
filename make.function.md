@@ -1,13 +1,27 @@
 # Git 저장소 최적화 명령어 구현 가이드
 
+## 🚀 실행 방법
+```bash
+ga optimized {카테고리} {명령어}
+ga opt {카테고리} {명령어}       # 짧은 별칭
+ga op {카테고리} {명령어}        # 더 짧은 별칭
+
+# 예시:
+ga optimized help workflow      # 워크플로우 가이드 표시
+ga opt help commands           # 전체 명령어 목록 표시  
+ga op quick status             # 최적화 상태 확인
+ga opt quick to-slim           # SLIM 모드로 전환
+ga optimized quick to-full     # FULL 모드로 복원
+```
+
 ## 📋 개요
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (2/28)
+## 🎯 구현 진행 상황 (3/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
-- [ ] 03. status - 현재 최적화 상태 확인
+- [x] 03. status - 현재 최적화 상태 확인
 - [ ] 04. to-slim - SLIM 모드로 전환
 - [ ] 05. to-full - FULL 모드로 복원
 - [ ] 06. expand-slim - 선택적 경로 확장
@@ -75,6 +89,7 @@
 ```
 
 ### 03. status (`src/cmd/optimized/quick/03_status.go`)
+**상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: 현재 저장소의 최적화 상태 확인
 **구현 내용**:
 ```bash
