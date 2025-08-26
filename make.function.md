@@ -4,9 +4,9 @@
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (1/28)
+## 🎯 구현 진행 상황 (2/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
-- [ ] 02. commands - 전체 명령어 목록
+- [x] 02. commands - 전체 명령어 목록
 - [ ] 03. status - 현재 최적화 상태 확인
 - [ ] 04. to-slim - SLIM 모드로 전환
 - [ ] 05. to-full - FULL 모드로 복원
@@ -58,8 +58,21 @@
 ```
 
 ### 02. commands (`src/cmd/optimized/help/02_commands.go`)
+**상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: 28개 전체 명령어 목록 표시
-**구현 내용**: ✅ 이미 구현됨
+**구현 내용**: 
+```
+1. 카테고리별 명령어 그룹화
+   - Help: 도움말 명령어 (workflow, commands)
+   - Quick: 자주 사용하는 빠른 명령어 (status, to-slim, to-full 등)
+   - Setup: 초기 설정 관련 (clone-slim, migrate, performance)
+   - Workspace: 작업 공간 관리 (expand-path, filter-branch 등)
+   - Advanced: 고급 기능 (shallow, unshallow, check-shallow 등)
+   - Submodule: 서브모듈 관리 (shallow-all, optimize-all 등)
+
+2. 각 명령어별 간단한 설명 포함
+3. 사용 예시 제공
+```
 
 ### 03. status (`src/cmd/optimized/quick/03_status.go`)
 **목적**: 현재 저장소의 최적화 상태 확인
@@ -866,4 +879,42 @@ docs(opt): update checklist for 01-workflow completion
 - Mark 01-workflow as completed
 - Update progress count (1/28)
 - Add completion date
+```
+
+### make.function.md 상태 업데이트 커밋 규약
+```bash
+# 함수 구현 완료 시 체크리스트 업데이트
+docs(opt): update checklist for <번호>-<함수명> completion
+
+- Mark <번호>-<함수명> as completed
+- Update progress count (<현재/28>)
+- Add completion date
+
+# 예시:
+docs(opt): update checklist for 03-status completion
+
+- Mark 03-status as completed
+- Update progress count (3/28)
+- Add completion date (2025-08-26)
+
+# 여러 함수 동시 완료 시
+docs(opt): update checklist for multiple completions
+
+- Mark 03-status, 04-to-slim as completed
+- Update progress count (4/28)
+- Add completion dates
+
+# 카테고리 완료 시
+docs(opt): complete Help category implementation
+
+- Mark all Help commands as completed (1-2)
+- Update progress count (2/28)
+- Add milestone achievement
+
+# 부분 구현 또는 진행 중 상태 업데이트
+docs(opt): update 03-status implementation progress
+
+- Add partial implementation notes
+- Update TODO items for remaining work
+- Document blockers or dependencies
 ```
