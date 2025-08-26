@@ -45,7 +45,7 @@ func printCommandsList() {
 	// Setup 카테고리
 	fmt.Println("\n🛠️ Setup (초기 설정)")
 	fmt.Println(" 13. clone-slim   - 최적화된 클론 (처음부터 30MB)")
-	fmt.Println(" 14. migrate      - 기존 저장소 SLIM 변환")
+	fmt.Println(" 14. migrate      - (deprecated - to-slim 사용)")
 	fmt.Println(" 15. performance  - 성능 최적화 설정")
 	
 	// Workspace 카테고리

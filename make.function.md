@@ -102,7 +102,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (11/28)
+## 🎯 구현 진행 상황 (12/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -116,7 +116,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 11. find-merge - 병합 베이스 찾기
 - [ ] 12. check-merge - 병합 가능 여부 확인
 - [ ] 13. clone-slim - 최적화된 클론
-- [ ] 14. migrate - 기존 저장소 SLIM 변환
+- [x] 14. migrate - (deprecated - to-slim 사용)
 - [ ] 15. performance - 성능 최적화 설정
 - [ ] 16. expand-path - 특정 경로 확장
 - [ ] 17. filter-branch - 브랜치별 필터 설정
@@ -442,19 +442,17 @@ ga opt quick expand 100
 ```
 
 ### 14. migrate (`src/cmd/optimized/setup/14_migrate.go`)
-**목적**: 기존 저장소를 SLIM으로 변환
+**상태**: ✅ 구현 완료 (2025-08-26) - deprecated
+**목적**: 기존 저장소를 SLIM으로 변환 (deprecated - to-slim 사용)
 **구현 내용**:
 ```bash
-1. 작업 중인 변경사항 확인
-   git status
+# deprecated - 대신 사용:
+ga opt quick to-slim
 
-2. stash가 필요한 경우 저장
-   git stash
-
-3. to-slim 프로세스 실행 (04번 참조)
-
-4. stash 복원
-   git stash pop
+# migrate와 to-slim은 동일한 기능:
+- 기존 FULL 상태 저장소를 SLIM으로 변환
+- 작업 내용 보존하면서 최적화 적용
+- to-slim이 더 직관적이고 quick 카테고리에 있어 접근성 좋음
 ```
 
 ### 15. performance (`src/cmd/optimized/setup/15_performance.go`)

@@ -81,8 +81,7 @@ func showWorkflowGuide() {
 	fmt.Println("  │  • 디스크 공간 확보가 필요한 경우")
 	fmt.Println("  │  • 저장소 성능 개선")
 	fmt.Println("  └─ 명령어:")
-	commandColor.Println("     ga optimized migrate      # 또는")
-	commandColor.Println("     ga optimized to-slim")
+	commandColor.Println("     ga optimized quick to-slim   # 권장")
 	fmt.Println()
 
 	// 3. RESTORE-FULL
