@@ -14,6 +14,7 @@ import (
 func NewOptimizedCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "optimized",
+		Aliases: []string{"opt", "op", "optimize"},
 		Short: "Git 저장소 최적화 명령어 (Partial Clone + Sparse Checkout)",
 		Long: `Git 저장소 최적화 명령어입니다.
 대용량 저장소를 효율적으로 관리하기 위한 다양한 최적화 기능을 제공합니다.
