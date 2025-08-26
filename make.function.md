@@ -784,49 +784,9 @@ git commit -m "test(opt): add tests for 03-status metrics collection"
 git add docs/optimized/03-status.md
 git commit -m "docs(opt): document 03-status output format and usage"
 
-# 8. PR 생성
+# 8. Push
 git push origin feature/opt-03-status
 ```
-
-### PR (Pull Request) 규칙
-```markdown
-## PR 제목
-[OPT] Implement #<번호> <함수명> - <간단 설명>
-
-예시:
-[OPT] Implement #03 status - Git repository optimization status check
-
-## PR 본문 템플릿
-### 📌 구현 내용
-- [ ] 기능 구현 완료
-- [ ] 테스트 작성 완료
-- [ ] 문서화 완료
-
-### 📝 변경 사항
-- 구현한 기능의 주요 내용
-- 사용된 Git 명령어
-- 특별한 고려사항
-
-### 🧪 테스트 방법
-```bash
-# 테스트 실행 명령어
-go test ./src/cmd/optimized/quick/
-```
-
-### 📸 스크린샷
-(실행 결과 스크린샷 첨부)
-
-### ✅ 체크리스트
-- [ ] PRD 요구사항 충족
-- [ ] 에러 처리 구현
-- [ ] 사용자 친화적 출력
-- [ ] 코드 리뷰 반영
-```
-
-### 머지 전략
-1. **Feature Branch → Develop**: Squash and merge
-2. **Develop → Master**: Create a merge commit
-3. **Hotfix → Master**: Create a merge commit
 
 ### 릴리스 태그
 ```bash
@@ -882,39 +842,45 @@ docs(opt): update checklist for 01-workflow completion
 ```
 
 ### make.function.md 상태 업데이트 커밋 규약
+
+**커밋 메시지 작성 시 주의사항:**
+- 제목은 영문으로 작성 (GitHub 호환성)
+- 본문은 한글로 작성하여 명확한 의미 전달
+- 진행 상황 숫자는 정확히 업데이트
+
 ```bash
 # 함수 구현 완료 시 체크리스트 업데이트
 docs(opt): update checklist for <번호>-<함수명> completion
 
-- Mark <번호>-<함수명> as completed
-- Update progress count (<현재/28>)
-- Add completion date
+- <번호>-<함수명> 완료 표시
+- 진행 상황 업데이트 (<현재/28>)
+- 완료 날짜 추가
 
 # 예시:
 docs(opt): update checklist for 03-status completion
 
-- Mark 03-status as completed
-- Update progress count (3/28)
-- Add completion date (2025-08-26)
+- 03-status 완료 표시
+- 진행 상황 업데이트 (3/28)
+- 완료 날짜 추가 (2025-08-26)
 
 # 여러 함수 동시 완료 시
 docs(opt): update checklist for multiple completions
 
-- Mark 03-status, 04-to-slim as completed
-- Update progress count (4/28)
-- Add completion dates
+- 03-status, 04-to-slim 완료 표시
+- 진행 상황 업데이트 (4/28)
+- 완료 날짜들 추가
 
 # 카테고리 완료 시
 docs(opt): complete Help category implementation
 
-- Mark all Help commands as completed (1-2)
-- Update progress count (2/28)
-- Add milestone achievement
+- Help 카테고리 전체 명령어 완료 표시 (1-2번)
+- 진행 상황 업데이트 (2/28)
+- 마일스톤 달성 기록
 
 # 부분 구현 또는 진행 중 상태 업데이트
 docs(opt): update 03-status implementation progress
 
-- Add partial implementation notes
-- Update TODO items for remaining work
-- Document blockers or dependencies
+- 부분 구현 내용 추가
+- 남은 작업 TODO 업데이트
+- 블로커나 의존성 문서화
 ```
