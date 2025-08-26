@@ -1,0 +1,5 @@
+build/darwin_amd64/workingcli filter=lfs diff=lfs merge=lfs -text
+build/darwin_arm64/workingcli filter=lfs diff=lfs merge=lfs -text
+build/linux_amd64/workingcli filter=lfs diff=lfs merge=lfs -text
+build/linux_arm64/workingcli filter=lfs diff=lfs merge=lfs -text    
+build/windows_arm64/workingcli.exe filter=lfs diff=lfs merge=lfs -text
