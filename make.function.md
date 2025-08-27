@@ -614,23 +614,31 @@ ga opt quick to-slim
 3. 결과 표시
 ```
 
-### 24. backup-config (`src/cmd/optimized/advanced/24_backup_config.go`)
-**목적**: 최적화 설정 백업/복원
+### 24. config (`src/cmd/optimized/advanced/24_config.go`)
+**목적**: 최적화 설정 관리 (백업/복원/확인)
 **구현 내용**:
 ```bash
-# 사용자 선택: backup 또는 restore
+# 사용자 선택: backup, restore, list, check
 
 [Backup]
-1. Git 설정 백업
-   git config --local --list > .git-optimization-backup
-
-2. Sparse Checkout 목록 백업
-   git sparse-checkout list > .git-sparse-backup
+1. config.yaml 백업 (.gaconfig/backups/{timestamp}/config.yaml)
+2. Sparse Checkout 목록 백업 (sparse-checkout.txt)
+3. Git 최적화 설정 백업 (git-optimization.txt)
 
 [Restore]
-1. 백업 파일 읽기
-2. 설정 복원
+1. 백업 목록에서 선택
+2. config.yaml 복원
 3. Sparse Checkout 복원
+4. Git 설정 복원
+
+[List]
+1. 모든 백업 타임스탬프 표시
+2. 각 백업의 파일 목록과 크기 표시
+
+[Check]
+1. 현재 config.yaml 상태
+2. Git 최적화 상태 (Partial Clone, Shallow, Sparse)
+3. 백업 정보 요약
 ```
 
 ### 25. shallow-all (`src/cmd/optimized/submodule/25_shallow_all.go`)

@@ -91,7 +91,7 @@ func NewOptimizedCmd() *cobra.Command {
 		advanced.NewUnshallowCmd(),        // 21. Unshallow
 		advanced.NewCheckShallowCmd(),     // 22. Check Shallow
 		advanced.NewCheckFilterCmd(),      // 23. Check Filter
-		advanced.NewBackupConfigCmd(),     // 24. Backup Config
+		advanced.NewConfigCmd(),            // 24. Config
 	)
 	
 	// Submodule 카테고리
