@@ -24,7 +24,7 @@
   "mcp__zen__chat으로 make.function.md의 05번 to-full 명세에 따라 
    src/cmd/optimized/quick/05_to_full.go 구현해줘. 
    utils/git.go와 utils/utils.go 유틸리티 활용. 
-   src/cmd/optimized/quick/04_to_slim.go 구현 참고."
+   src/cmd/optimized/quick/04_to_slim.go, src/config/config.go 구현 참고 및 이용."
   ```
 
 #### 2단계: Claude 검증 및 개선 (claude-opus-4.1)
@@ -103,7 +103,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (15/28)
+## 🎯 구현 진행 상황 (16/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -118,8 +118,8 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 12. check-merge - 병합 가능 여부 확인
 - [x] 13. clone-slim - 최적화된 클론
 - [x] 14. migrate - (deprecated - to-slim 사용)
-- [ ] 15. performance - 성능 최적화 설정
-- [ ] 16. expand-path - 특정 경로 확장
+- [x] 15. performance - 성능 최적화 설정
+- [x] 16. expand-path - 특정 경로 확장
 - [ ] 17. filter-branch - 브랜치별 필터 설정
 - [ ] 18. clear-filter - 필터 완전 제거
 - [ ] 19. restore-branch - 브랜치 전체 복원
@@ -460,6 +460,7 @@ ga opt quick to-slim
 ```
 
 ### 15. performance (`src/cmd/optimized/setup/15_performance.go`)
+**상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: 성능 최적화 설정 적용
 **구현 내용**:
 ```bash
@@ -481,16 +482,30 @@ ga opt quick to-slim
 ```
 
 ### 16. expand-path (`src/cmd/optimized/workspace/16_expand_path.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 특정 경로를 Sparse Checkout에 추가
 **구현 내용**:
 ```bash
 # 사용자 입력: 경로
 
 1. 경로 유효성 확인
-2. Sparse Checkout에 추가
+   - Git 저장소에 존재하는지 검증 (utils.PathExistsInRepo)
+   - 이미 추가된 경로인지 중복 확인
+
+2. Cone/Non-cone 모드 지능적 전환
+   - 파일 경로 감지 시 자동으로 non-cone 모드로 전환
+   - 기존 파일 경로가 있으면 non-cone 유지
+
+3. Sparse Checkout에 추가
    git sparse-checkout add <경로>
-3. 파일 다운로드
-4. 결과 표시
+
+4. Config 동기화
+   - sparse-checkout list를 config.yaml에 자동 저장
+   - config.Set() 활용하여 설정 파일 업데이트
+
+5. 결과 표시
+   - 활성화된 경로 목록 출력 (최대 10개)
+   - 파일/폴더 구분 표시
 ```
 
 ### 17. filter-branch (`src/cmd/optimized/workspace/17_filter_branch.go`)
@@ -511,13 +526,13 @@ ga opt quick to-slim
 4. 설정 확인
 ```
 
-### 18. clear-filter (`src/cmd/optimized/workspace/18_clear_filter.go`)
+### 18. clear-filter-branch (`src/cmd/optimized/workspace/18_clear_filter.go`)
 **목적**: 모든 필터 제거
 **구현 내용**:
 ```bash
-1. Partial Clone 필터 제거
-2. Sparse Checkout 해제
-3. 모든 객체 다운로드
+1. Branch 필터만 제거
+2. 필터 해제 적용
+   git fetch --refetch
 4. 결과 확인
 ```
 
