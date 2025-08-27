@@ -100,8 +100,8 @@ func NewOptimizedCmd() *cobra.Command {
 		Short: "서브모듈 최적화",
 	}
 	submoduleCmd.AddCommand(
-		// 개별 서브모듈 제어 (미구현)
-		// submodule.NewStatusCmd(),        // Status (submodule)
+		// 개별 서브모듈 제어
+		submodule.NewStatusCmd(),        // Status (submodule)
 		// submodule.NewToSlimCmd(),        // To-Slim (submodule)
 		// submodule.NewToFullCmd(),        // To-Full (submodule)
 		// submodule.NewExpandSlimCmd(),    // Expand-Slim (submodule)

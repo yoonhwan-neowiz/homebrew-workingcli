@@ -122,7 +122,7 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 이 문서는 Git 저장소 최적화를 위한 33개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (26/33)
+## 🎯 구현 진행 상황 (27/33)
 - [x] help.workflow - Git 최적화 워크플로우 가이드
 - [x] help.commands - 전체 명령어 목록
 - [x] quick.status - 현재 최적화 상태 확인
@@ -147,7 +147,7 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 - [x] advanced.check-shallow - 히스토리 상태 확인
 - [x] advanced.check-filter - 브랜치 필터 확인
 - [x] advanced.config - 설정 백업/복원/확인
-- [ ] submodule.status - 서브모듈별 최적화 상태 확인
+- [x] submodule.status - 서브모듈별 최적화 상태 확인
 - [ ] submodule.to-slim - 서브모듈을 SLIM 모드로 전환
 - [ ] submodule.to-full - 서브모듈을 FULL 모드로 복원
 - [ ] submodule.expand-slim - 서브모듈 선택적 경로 확장
@@ -197,7 +197,7 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 #### Submodule 카테고리 (서브모듈 최적화)
 | 파일명 | 명령어 | 설명 | 상태 |
 |--------|--------|------|------|
-| `status.go` | `status` | 서브모듈 상태 확인 | ⏳ 대기 |
+| `status.go` | `status` | 서브모듈 상태 확인 | ✅ 구현 완료 |
 | `to_slim.go` | `to-slim` | SLIM 모드 전환 | ⏳ 대기 |
 | `to_full.go` | `to-full` | FULL 모드 복원 | ⏳ 대기 |
 | `expand_slim.go` | `expand-slim` | 경로 확장 | ⏳ 대기 |
@@ -723,6 +723,7 @@ ga opt quick to-slim
 ```
 
 ### submodule.status (`src/cmd/optimized/submodule/status.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 특정 서브모듈의 최적화 상태 확인 (quick.status의 서브모듈 버전)
 **구현 내용**:
 ```bash
