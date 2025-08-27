@@ -24,7 +24,14 @@ var rootCmd = &cobra.Command{
 	SilenceErrors: true,  // 에러 자동 출력 비활성화 (Git fallback 처리를 위해)
 	SilenceUsage:  true,  // 에러 시 사용법 자동 출력 비활성화
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// 설정 초기화
+		// clone-slim 같은 명령어는 Git 저장소 밖에서도 실행 가능해야 함
+		// optimized setup clone-slim 명령인지 확인
+		if len(os.Args) >= 4 && os.Args[1] == "optimized" && os.Args[2] == "setup" && os.Args[3] == "clone-slim" {
+			// clone-slim은 설정 초기화 건너뛰기
+			return nil
+		}
+		
+		// 그 외 명령어는 설정 초기화
 		if err := config.Initialize(); err != nil {
 			return fmt.Errorf("설정 초기화 실패: %w", err)
 		}
@@ -44,11 +51,15 @@ func Execute() {
 		// cobra에서 명령어를 찾지 못한 경우 Git fallback 시도
 		if len(os.Args) > 1 {
 			if gitErr := HandleGitFallback(os.Args[1:]); gitErr != nil {
-				fmt.Println(gitErr)
+				// Git fallback도 실패한 경우
+				fmt.Printf("❌ Git 명령 실행 실패: %v\n", gitErr)
+				fmt.Printf("   (원래 오류: %v)\n", err)
 				os.Exit(1)
 			}
+			// Git fallback 성공 시 정상 종료
 		} else {
-			fmt.Println(err)
+			// 인자가 없는 경우 cobra 에러 출력
+			fmt.Printf("❌ 오류: %v\n", err)
 			os.Exit(1)
 		}
 	}
