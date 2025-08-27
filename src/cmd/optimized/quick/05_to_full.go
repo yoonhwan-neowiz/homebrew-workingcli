@@ -70,7 +70,7 @@ func runToFull() {
 	
 	// 6-1. Sparse Checkout 해제
 	if utils.IsSparseCheckoutEnabled() {
-		fmt.Println("\n[1/4] Sparse Checkout 해제...")
+		fmt.Println("\n[1/5] Sparse Checkout 해제...")
 		cmd := exec.Command("git", "sparse-checkout", "disable")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
@@ -80,11 +80,11 @@ func runToFull() {
 			fmt.Println("✅ Sparse Checkout 해제 완료")
 		}
 	} else {
-		fmt.Println("\n[1/4] Sparse Checkout이 이미 비활성화되어 있습니다")
+		fmt.Println("\n[1/5] Sparse Checkout이 이미 비활성화되어 있습니다")
 	}
 	
 	// 6-2. Shallow 저장소인 경우 전체 히스토리 다운로드
-	fmt.Println("\n[2/4] 전체 히스토리 다운로드...")
+	fmt.Println("\n[2/5] 전체 히스토리 다운로드...")
 	if utils.IsShallowRepository() {
 		fmt.Println("   Shallow 저장소 감지 - unshallow 수행 중...")
 		cmd := exec.Command("git", "fetch", "--unshallow")
@@ -102,7 +102,7 @@ func runToFull() {
 	}
 	
 	// 6-3. 모든 객체 다운로드 (refetch)
-	fmt.Println("\n[3/4] 모든 객체 다운로드 (refetch)...")
+	fmt.Println("\n[3/5] 모든 객체 다운로드 (refetch)...")
 	fmt.Println("   이 작업은 시간이 오래 걸릴 수 있습니다...")
 	cmd := exec.Command("git", "fetch", "--refetch")
 	output, err := cmd.CombinedOutput()
@@ -129,7 +129,7 @@ func runToFull() {
 	}
 	
 	// 6-4. Partial Clone 필터 제거
-	fmt.Println("\n[4/4] Partial Clone 필터 제거...")
+	fmt.Println("\n[4/5] Partial Clone 필터 제거...")
 	partialFilter := utils.GetPartialCloneFilter()
 	if partialFilter != "" {
 		// Partial Clone 관련 설정 제거
@@ -152,7 +152,19 @@ func runToFull() {
 		fmt.Println("   Partial Clone 필터가 설정되어 있지 않습니다")
 	}
 	
-	// 7. 결과 확인
+	// 7. Maintenance 실행 (저장소 정리 및 최적화)
+	fmt.Println("\n[5/5] Git maintenance 실행...")
+	fmt.Println("   저장소를 정리하고 최적화합니다...")
+	cmd = exec.Command("git", "maintenance", "run")
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("⚠️ Maintenance 실행 중 경고: %v\n", err)
+		fmt.Printf("   출력: %s\n", string(output))
+	} else {
+		fmt.Println("✅ Maintenance 실행 완료 (gc, repack, commit-graph 업데이트)")
+	}
+	
+	// 8. 결과 확인
 	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println("📊 복원 결과 확인")
 	
