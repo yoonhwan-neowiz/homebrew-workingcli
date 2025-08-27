@@ -103,7 +103,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (16/28)
+## 🎯 구현 진행 상황 (18/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -120,9 +120,9 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 14. migrate - (deprecated - to-slim 사용)
 - [x] 15. performance - 성능 최적화 설정
 - [x] 16. expand-path - 특정 경로 확장
-- [ ] 17. filter-branch - 브랜치별 필터 설정
-- [ ] 18. clear-filter - 필터 완전 제거
-- [ ] 19. restore-branch - 브랜치 전체 복원
+- [x] 17. filter-branch - 브랜치 필터 설정 (특정 브랜치만 표시)
+- [x] 18. clear-filter - 브랜치 필터 제거 (모든 브랜치 표시)
+- [ ] 19. restore-branch - (DEPRECATED - 사용하지 않음)
 - [ ] 20. shallow - 히스토리 줄이기
 - [ ] 21. unshallow - 히스토리 복원
 - [ ] 22. check-shallow - 히스토리 상태 확인
@@ -509,43 +509,62 @@ ga opt quick to-slim
 ```
 
 ### 17. filter-branch (`src/cmd/optimized/workspace/17_filter_branch.go`)
-**목적**: 브랜치별로 다른 Partial Clone 필터 적용
+**상태**: ✅ 구현 완료 (2025-08-27)
+**목적**: 브랜치 필터 설정 (특정 브랜치만 표시)
 **구현 내용**:
 ```bash
-# 사용자 입력: 브랜치명, 필터 크기
+# 브랜치 필터 설정으로 선택한 브랜치만 노출
 
-1. 브랜치 전환
-   git checkout <브랜치>
+1. 필터 모드 선택
+   - single: 단일 브랜치만 표시
+   - multi: 여러 브랜치 선택
 
-2. 브랜치별 필터 설정
-   git config branch.<브랜치>.partialclonefilter blob:limit=<크기>
+2. 브랜치 타입 선택
+   - local: 로컬 브랜치
+   - remote: 원격 브랜치
 
-3. 필터 적용
-   git fetch --refetch
+3. 브랜치 선택
+   - 리스트에서 번호로 선택
+   - 직접 브랜치명 입력
+   - multi 모드: 쉼표로 구분하여 여러 개 선택
 
-4. 설정 확인
+4. 필터 적용
+   git config custom.branchFilter <브랜치1,브랜치2,...>
+   
+5. 결과 확인
+   - 필터링된 브랜치 목록 표시
+   - 프로젝트별 설정 저장
 ```
 
-### 18. clear-filter-branch (`src/cmd/optimized/workspace/18_clear_filter.go`)
-**목적**: 모든 필터 제거
+### 18. clear-filter (`src/cmd/optimized/workspace/18_clear_filter_branch.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
+**목적**: 브랜치 필터 제거 (모든 브랜치 표시)
 **구현 내용**:
 ```bash
-1. Branch 필터만 제거
-2. 필터 해제 적용
-   git fetch --refetch
+# 브랜치 필터를 제거하여 모든 브랜치 노출
+
+1. 현재 필터 확인
+   git config --get custom.branchFilter
+
+2. 사용자 확인 프롬프트
+   
+3. 필터 제거
+   git config --unset custom.branchFilter
+   또는
+   git config custom.branchFilter "*"
+
 4. 결과 확인
+   - 로컬 브랜치 개수 표시
+   - 원격 브랜치 개수 표시
 ```
 
 ### 19. restore-branch (`src/cmd/optimized/workspace/19_restore_branch.go`)
-**목적**: 특정 브랜치만 전체 복원
+**상태**: ❌ DEPRECATED - 사용하지 않음
+**목적**: ~~특정 브랜치만 전체 복원~~ (더 이상 사용하지 않음)
 **구현 내용**:
 ```bash
-# 사용자 입력: 브랜치명
-
-1. 브랜치 전환
-2. 해당 브랜치의 모든 파일 다운로드
-3. 히스토리 복원
-4. 결과 확인
+# DEPRECATED - 이 기능은 더 이상 사용하지 않습니다
+# 대신 17번 filter-branch와 18번 clear-filter를 사용하세요
 ```
 
 ### 20. shallow (`src/cmd/optimized/advanced/20_shallow.go`)

@@ -635,3 +635,129 @@ func PathExistsInRepo(path string) bool {
 	err := cmd.Run()
 	return err == nil
 }
+
+// GetLocalBranches returns list of local branches
+func GetLocalBranches() []string {
+	cmd := exec.Command("git", "branch")
+	output, err := cmd.Output()
+	if err != nil {
+		return []string{}
+	}
+
+	var branches []string
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for _, line := range lines {
+		branch := strings.TrimSpace(strings.TrimPrefix(line, "*"))
+		branch = strings.TrimSpace(branch)
+		if branch != "" {
+			branches = append(branches, branch)
+		}
+	}
+	return branches
+}
+
+// GetRemoteBranches returns list of remote branches
+func GetRemoteBranches() []string {
+	cmd := exec.Command("git", "branch", "-r")
+	output, err := cmd.Output()
+	if err != nil {
+		return []string{}
+	}
+
+	var branches []string
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for _, line := range lines {
+		branch := strings.TrimSpace(line)
+		if branch != "" && !strings.Contains(branch, "HEAD") {
+			branches = append(branches, branch)
+		}
+	}
+	return branches
+}
+
+// GetBranchFilter returns current branch filter from git config
+func GetBranchFilter() []string {
+	cmd := exec.Command("git", "config", "--get", "custom.branchFilter")
+	output, err := cmd.Output()
+	if err != nil {
+		return []string{}
+	}
+
+	filterStr := strings.TrimSpace(string(output))
+	if filterStr == "" || filterStr == "*" {
+		return []string{}
+	}
+
+	return strings.Split(filterStr, ",")
+}
+
+// SetBranchFilter sets branch filter in git config
+func SetBranchFilter(branches []string) error {
+	filterStr := strings.Join(branches, ",")
+	cmd := exec.Command("git", "config", "custom.branchFilter", filterStr)
+	return cmd.Run()
+}
+
+// ClearBranchFilter removes branch filter from git config
+func ClearBranchFilter() error {
+	cmd := exec.Command("git", "config", "--unset", "custom.branchFilter")
+	return cmd.Run()
+}
+
+// CountLocalBranches returns the number of local branches
+func CountLocalBranches() int {
+	branches := GetLocalBranches()
+	return len(branches)
+}
+
+// CountRemoteBranches returns the number of remote branches
+func CountRemoteBranches() int {
+	branches := GetRemoteBranches()
+	return len(branches)
+}
+
+// GetAllUniqueBranches returns all unique branch names (local and remote without origin/ prefix)
+func GetAllUniqueBranches() []string {
+	branchMap := make(map[string]bool)
+	
+	// 로컬 브랜치 추가
+	localBranches := GetLocalBranches()
+	for _, branch := range localBranches {
+		branchMap[branch] = true
+	}
+	
+	// 원격 브랜치 추가 (origin/ 제거)
+	remoteBranches := GetRemoteBranches()
+	for _, branch := range remoteBranches {
+		// origin/ 접두사 제거
+		cleanBranch := strings.TrimPrefix(branch, "origin/")
+		branchMap[cleanBranch] = true
+	}
+	
+	// 맵을 슬라이스로 변환
+	var uniqueBranches []string
+	for branch := range branchMap {
+		uniqueBranches = append(uniqueBranches, branch)
+	}
+	
+	// 정렬
+	for i := 0; i < len(uniqueBranches); i++ {
+		for j := i + 1; j < len(uniqueBranches); j++ {
+			if uniqueBranches[i] > uniqueBranches[j] {
+				uniqueBranches[i], uniqueBranches[j] = uniqueBranches[j], uniqueBranches[i]
+			}
+		}
+	}
+	
+	return uniqueBranches
+}
+
+// Contains checks if a slice contains a specific item
+func Contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
