@@ -103,7 +103,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (19/28)
+## 🎯 구현 진행 상황 (24/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -123,11 +123,11 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 17. filter-branch - 브랜치 필터 설정 (특정 브랜치만 표시)
 - [x] 18. clear-filter-branch - 브랜치 필터 제거 (모든 브랜치 표시)
 - [x] 19. restore-branch - (DEPRECATED - 사용하지 않음)
-- [ ] 20. shallow - 히스토리 줄이기
-- [ ] 21. unshallow - 히스토리 복원
-- [ ] 22. check-shallow - 히스토리 상태 확인
-- [ ] 23. check-filter - 브랜치 필터 확인
-- [ ] 24. backup-config - 설정 백업/복원
+- [x] 20. shallow - 히스토리 줄이기
+- [x] 21. unshallow - 히스토리 복원
+- [x] 22. check-shallow - 히스토리 상태 확인
+- [x] 23. check-filter - 브랜치 필터 확인
+- [x] 24. config - 설정 백업/복원/확인
 - [ ] 25. shallow-all - 모든 서브모듈 shallow 변환
 - [ ] 26. unshallow-all - 모든 서브모듈 히스토리 복원
 - [ ] 27. optimize-all - 모든 서브모듈 SLIM 최적화
@@ -568,16 +568,19 @@ ga opt quick to-slim
 ```
 
 ### 20. shallow (`src/cmd/optimized/advanced/20_shallow.go`)
-**목적**: 히스토리를 depth=1로 줄이기
+**상태**: ✅ 구현 완료 (2025-08-27)
+**목적**: 히스토리를 지정된 depth로 줄이기 (기본값: 1)
 **구현 내용**:
 ```bash
-1. 현재 상태 백업
-2. git pull --depth=1
-3. git gc --prune=now
-4. 결과 확인
+1. depth 파라미터 처리 (인자 없으면 기본값 1)
+2. 현재 상태 백업
+3. git pull --depth=[지정된 depth]
+4. git gc --prune=now
+5. 결과 확인 (새로운 커밋 수 표시)
 ```
 
 ### 21. unshallow (`src/cmd/optimized/advanced/21_unshallow.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 전체 히스토리 복원
 **구현 내용**:
 ```bash
@@ -586,6 +589,7 @@ ga opt quick to-slim
 ```
 
 ### 22. check-shallow (`src/cmd/optimized/advanced/22_check_shallow.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 현재 shallow 상태 확인
 **구현 내용**:
 ```bash
@@ -602,6 +606,7 @@ ga opt quick to-slim
 ```
 
 ### 23. check-filter (`src/cmd/optimized/advanced/23_check_filter.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 현재 필터 설정 확인
 **구현 내용**:
 ```bash
@@ -615,6 +620,7 @@ ga opt quick to-slim
 ```
 
 ### 24. config (`src/cmd/optimized/advanced/24_config.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 최적화 설정 관리 (백업/복원/확인)
 **구현 내용**:
 ```bash
