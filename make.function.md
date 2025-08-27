@@ -103,7 +103,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (24/28)
+## 🎯 구현 진행 상황 (26/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -128,8 +128,8 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 22. check-shallow - 히스토리 상태 확인
 - [x] 23. check-filter - 브랜치 필터 확인
 - [x] 24. config - 설정 백업/복원/확인
-- [ ] 25. shallow-all - 모든 서브모듈 shallow 변환
-- [ ] 26. unshallow-all - 모든 서브모듈 히스토리 복원
+- [x] 25. shallow-all - 모든 서브모듈 shallow 변환
+- [x] 26. unshallow-all - 모든 서브모듈 히스토리 복원
 - [ ] 27. optimize-all - 모든 서브모듈 SLIM 최적화
 - [ ] 28. status-all - 모든 서브모듈 상태 확인
 
@@ -648,19 +648,44 @@ ga opt quick to-slim
 ```
 
 ### 25. shallow-all (`src/cmd/optimized/submodule/25_shallow_all.go`)
-**목적**: 모든 서브모듈 shallow 변환
+**상태**: ✅ 구현 완료 (2025-08-27)
+**목적**: 모든 서브모듈을 Shallow Clone으로 변환 (depth 파라미터 지원)
 **구현 내용**:
 ```bash
-1. git submodule foreach 'git pull --depth=1'
-2. 각 서브모듈 결과 표시
+# 사용법: ga opt submodule shallow-all [depth]
+# depth를 지정하지 않으면 기본값 1
+
+1. depth 파라미터 처리 (기본값: 1)
+2. 서브모듈 목록 확인
+3. 각 서브모듈에 대해:
+   - 현재 shallow 상태 확인
+   - git pull --depth=[depth] 실행
+   - gc로 오래된 객체 정리
+4. 결과 요약 표시 (성공/실패 카운트)
+
+# 사용 예시:
+ga opt submodule shallow-all        # depth=1 (기본값)
+ga opt submodule shallow-all 5      # depth=5로 설정
+ga opt submodule shallow-all 10     # depth=10으로 설정
 ```
 
 ### 26. unshallow-all (`src/cmd/optimized/submodule/26_unshallow_all.go`)
-**목적**: 모든 서브모듈 히스토리 복원
+**상태**: ✅ 구현 완료 (2025-08-27)
+**목적**: 모든 서브모듈의 전체 히스토리 복원
 **구현 내용**:
 ```bash
-1. git submodule foreach 'git fetch --unshallow'
-2. 각 서브모듈 결과 표시
+1. 사용자 확인 프롬프트 (대용량 다운로드 경고)
+2. 서브모듈 목록 확인
+3. 각 서브모듈에 대해:
+   - 현재 shallow 상태 및 depth 확인
+   - .git 폴더 크기 측정 (복원 전)
+   - git fetch --unshallow 실행
+   - 복원 후 크기 측정 및 비교
+   - 총 커밋 수 표시
+4. 결과 요약:
+   - 성공/실패 카운트
+   - 전체 크기 변화 표시
+   - 각 서브모듈별 크기 증가량
 ```
 
 ### 27. optimize-all (`src/cmd/optimized/submodule/27_optimize_all.go`)

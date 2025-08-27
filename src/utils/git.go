@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // IsGitRepository checks if current directory is a git repository
@@ -760,4 +761,78 @@ func Contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// SubmoduleOperation은 각 서브모듈에서 실행할 작업을 정의
+type SubmoduleOperation func(path string) error
+
+// ExecuteOnSubmodulesParallel은 모든 서브모듈에 대해 병렬로 작업을 실행
+func ExecuteOnSubmodulesParallel(operation SubmoduleOperation, jobs int, recursive bool) (int, int, error) {
+	if jobs < 1 {
+		jobs = 1
+	}
+
+	// 서브모듈 목록 가져오기
+	args := []string{"submodule", "foreach"}
+	if recursive {
+		args = append(args, "--recursive")
+	}
+	args = append(args, "--quiet", "echo $path")
+	cmd := exec.Command("git", args...)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, 0, fmt.Errorf("서브모듈 목록을 가져올 수 없습니다: %v", err)
+	}
+
+	submodulePaths := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(submodulePaths) == 0 || (len(submodulePaths) == 1 && submodulePaths[0] == "") {
+		return 0, 0, nil // 서브모듈이 없음
+	}
+
+	// 작업 풀 생성
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, jobs)
+	errChan := make(chan error, len(submodulePaths))
+	successChan := make(chan string, len(submodulePaths))
+
+	for _, submodulePath := range submodulePaths {
+		if submodulePath == "" {
+			continue
+		}
+
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			semaphore <- struct{}{}        // 작업 슬롯 획득
+			defer func() { <-semaphore }() // 작업 슬롯 반환
+
+			// 작업 실행
+			if err := operation(path); err != nil {
+				errChan <- fmt.Errorf("%s: %v", path, err)
+			} else {
+				successChan <- path
+			}
+		}(submodulePath)
+	}
+
+	// 모든 작업 완료 대기
+	wg.Wait()
+	close(errChan)
+	close(successChan)
+
+	// 결과 집계
+	successCount := len(successChan)
+	failCount := len(errChan)
+
+	// 에러 수집
+	var errors []string
+	for err := range errChan {
+		errors = append(errors, err.Error())
+	}
+
+	if len(errors) > 0 {
+		return successCount, failCount, fmt.Errorf("일부 서브모듈 처리 실패:\n%s", strings.Join(errors, "\n"))
+	}
+
+	return successCount, failCount, nil
 }

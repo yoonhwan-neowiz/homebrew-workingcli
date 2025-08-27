@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// clone-slim 같은 명령어는 Git 저장소 밖에서도 실행 가능해야 함
 		// optimized setup clone-slim 명령인지 확인
-		if len(os.Args) >= 4 && os.Args[1] == "optimized" && os.Args[2] == "setup" && os.Args[3] == "clone-slim" {
+		if len(os.Args) >= 4 && (os.Args[1] == "optimized" || os.Args[1] == "opt" || os.Args[1] == "op" || os.Args[1] == "optimize") && os.Args[2] == "setup" && os.Args[3] == "clone-slim" {
 			// clone-slim은 설정 초기화 건너뛰기
 			return nil
 		}

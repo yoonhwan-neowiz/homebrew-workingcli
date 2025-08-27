@@ -5,10 +5,12 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
 	"github.com/spf13/cobra"
 )
+
+// defaultJobs는 병렬 작업의 기본 개수입니다.
+const defaultJobs = 4
 
 func NewPushCmd() *cobra.Command {
 	var (
@@ -70,9 +72,45 @@ func NewPushCmd() *cobra.Command {
 				return nil
 			}
 
-			// 4. 병렬로 서브모듈 푸시
-			if err := pushSubmodulesParallel(changedSubmodules, jobs, recursive, force); err != nil {
-				return fmt.Errorf("서브모듈 푸시 실패: %v", err)
+			// 4. 변경된 서브모듈 푸시
+			fmt.Printf("\n🔄 %d개의 변경된 서브모듈을 푸시합니다...\n", len(changedSubmodules))
+			
+			// 푸시 작업 정의
+			pushOperation := func(path string) error {
+				// 서브모듈 디렉토리로 이동
+				originalDir, _ := os.Getwd()
+				if err := os.Chdir(path); err != nil {
+					return fmt.Errorf("디렉토리 이동 실패: %v", err)
+				}
+				defer os.Chdir(originalDir)
+
+				// 푸시 명령어 구성
+				args := []string{"push"}
+				if force {
+					args = append(args, "--force")
+				}
+				
+				if err := execGitCommand(args...); err != nil {
+					return fmt.Errorf("푸시 실패: %v", err)
+				}
+				
+				fmt.Printf("✅ %s: 푸시 완료\n", path)
+				return nil
+			}
+
+			// 변경된 서브모듈만 처리하도록 필터링된 작업 실행
+			var successCount, failCount int
+			for _, submodule := range changedSubmodules {
+				if err := pushOperation(submodule); err != nil {
+					fmt.Printf("❌ %s: %v\n", submodule, err)
+					failCount++
+				} else {
+					successCount++
+				}
+			}
+			
+			if failCount > 0 {
+				return fmt.Errorf("서브모듈 푸시 중 %d개 실패", failCount)
 			}
 
 			return nil
@@ -84,6 +122,28 @@ func NewPushCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "강제 푸시 (주의 필요)")
 
 	return cmd
+}
+
+// 서브모듈 목록 가져오기
+func getSubmodules() ([]string, error) {
+	cmd := exec.Command("git", "submodule", "status")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("서브모듈 상태 확인 실패: %v", err)
+	}
+
+	var submodules []string
+	for _, line := range strings.Split(string(output), "\n") {
+		if line == "" {
+			continue
+		}
+		// 상태 출력 형식: <hash> <path> (<branch>)
+		parts := strings.Fields(line)
+		if len(parts) >= 2 {
+			submodules = append(submodules, parts[1])
+		}
+	}
+	return submodules, nil
 }
 
 // 변경된 서브모듈 목록 가져오기
@@ -112,96 +172,4 @@ func getChangedSubmodules() ([]string, error) {
 	}
 
 	return changedSubmodules, nil
-}
-
-// 서브모듈 병렬 푸시
-func pushSubmodulesParallel(submodules []string, jobs int, recursive bool, force bool) error {
-	if jobs < 1 {
-		jobs = 1
-	}
-
-	// 작업 풀 생성
-	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, jobs)
-	errChan := make(chan error, len(submodules))
-
-	for _, submodule := range submodules {
-		wg.Add(1)
-		go func(path string) {
-			defer wg.Done()
-			semaphore <- struct{}{} // 작업 슬롯 획득
-			defer func() { <-semaphore }() // 작업 슬롯 반환
-
-			// 서브모듈 디렉토리로 이동
-			if err := os.Chdir(path); err != nil {
-				errChan <- fmt.Errorf("서브모듈 '%s' 디렉토리 이동 실패: %v", path, err)
-				return
-			}
-			defer os.Chdir("..") // 원래 디렉토리로 복귀
-
-			// 푸시 명령어 구성
-			args := []string{"push"}
-			if force {
-				args = append(args, "--force")
-			}
-			if recursive {
-				// 재귀적 푸시를 위한 추가 처리
-				if err := pushRecursive(args, force); err != nil {
-					errChan <- fmt.Errorf("서브모듈 '%s' 재귀적 푸시 실패: %v", path, err)
-					return
-				}
-			} else {
-				// 일반 푸시
-				if err := execGitCommand(args...); err != nil {
-					errChan <- fmt.Errorf("서브모듈 '%s' 푸시 실패: %v", path, err)
-					return
-				}
-			}
-		}(submodule)
-	}
-
-	// 모든 작업 완료 대기
-	wg.Wait()
-	close(errChan)
-
-	// 에러 수집
-	var errors []string
-	for err := range errChan {
-		errors = append(errors, err.Error())
-	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("서브모듈 푸시 중 오류 발생:\n%s", strings.Join(errors, "\n"))
-	}
-
-	return nil
-}
-
-// 재귀적 푸시 처리
-func pushRecursive(args []string, force bool) error {
-	// 현재 저장소 푸시
-	if err := execGitCommand(args...); err != nil {
-		return err
-	}
-
-	// 하위 서브모듈 확인
-	submodules, err := getSubmodules()
-	if err != nil {
-		return err
-	}
-
-	// 각 서브모듈에 대해 재귀적으로 푸시
-	for _, submodule := range submodules {
-		if err := os.Chdir(submodule); err != nil {
-			return fmt.Errorf("서브모듈 '%s' 디렉토리 이동 실패: %v", submodule, err)
-		}
-		if err := pushRecursive(args, force); err != nil {
-			return fmt.Errorf("서브모듈 '%s' 재귀적 푸시 실패: %v", submodule, err)
-		}
-		if err := os.Chdir(".."); err != nil {
-			return fmt.Errorf("상위 디렉토리 이동 실패: %v", err)
-		}
-	}
-
-	return nil
 } 
