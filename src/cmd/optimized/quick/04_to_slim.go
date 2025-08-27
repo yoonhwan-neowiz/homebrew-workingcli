@@ -115,12 +115,12 @@ func runToSlim() {
 	skipSparse := len(sparsePaths) == 0 || (len(sparsePaths) == 1 && sparsePaths[0] == "*")
 	
 	if skipSparse {
-		// 기본값으로 README.md만 포함 (clone-slim과 동일)
-		fmt.Println("  → 기본 설정 적용 (README.md만 포함)")
+		// 기본값으로 루트 디렉토리의 모든 파일 포함 (cone 모드)
+		fmt.Println("  → 기본 설정 적용 (루트 파일들 포함)")
 		runGitCommand("config", "core.sparseCheckout", "true")
-		runGitCommand("sparse-checkout", "init", "--no-cone")
-		runGitCommand("sparse-checkout", "set", "README.md")
-		fmt.Println("  → README.md 파일만 유지")
+		runGitCommand("sparse-checkout", "init", "--cone")
+		runGitCommand("sparse-checkout", "set", "/")  // 루트 디렉토리만 (1 depth)
+		fmt.Println("  → 루트 디렉토리 파일들 유지 (.gitmodules, README.md 등)")
 	} else {
 		// 사용자 지정 경로가 있는 경우
 		runGitCommand("config", "core.sparseCheckout", "true")

@@ -107,22 +107,22 @@ func executeCloneSlim(args []string) {
 	// 2. Sparse Checkout 설정
 	fmt.Println("\n2️⃣ Sparse Checkout 설정...")
 	
-	// non-cone 모드로 초기화하여 파일 단위 제어 가능하게 함
-	initCmd := exec.Command("git", "sparse-checkout", "init", "--no-cone")
+	// cone 모드로 초기화 (디렉토리 기반 제어)
+	initCmd := exec.Command("git", "sparse-checkout", "init", "--cone")
 	if output, err := initCmd.CombinedOutput(); err != nil {
 		fmt.Printf("❌ Sparse Checkout 초기화 실패: %v\n", err)
 		fmt.Printf("   출력: %s\n", string(output))
 		return
 	}
 	
-	// README.md 파일만 포함
-	setCmd := exec.Command("git", "sparse-checkout", "set", "README.md")
+	// 루트 디렉토리만 포함 (1 depth - .gitmodules, README.md 등 모든 루트 파일)
+	setCmd := exec.Command("git", "sparse-checkout", "set", "/")
 	if output, err := setCmd.CombinedOutput(); err != nil {
 		fmt.Printf("⚠️ Sparse Checkout 기본 경로 설정 실패: %v\n", err)
 		fmt.Printf("   출력: %s\n", string(output))
 	}
 	
-	fmt.Println("   ✅ Sparse Checkout 초기화 완료 (README.md만 포함)")
+	fmt.Println("   ✅ Sparse Checkout 초기화 완료 (루트 파일들 포함)")
 	fmt.Println("   ℹ️ 추가 경로는 'ga opt quick expand-slim'으로 설정 가능")
 	
 	// 3. Shallow 설정 (depth=1) 및 checkout
