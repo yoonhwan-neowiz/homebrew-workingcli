@@ -103,7 +103,7 @@ ga optimized quick to-full     # FULL 모드로 복원
 이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (18/28)
+## 🎯 구현 진행 상황 (19/28)
 - [x] 01. workflow - Git 최적화 워크플로우 가이드
 - [x] 02. commands - 전체 명령어 목록
 - [x] 03. status - 현재 최적화 상태 확인
@@ -121,8 +121,8 @@ ga optimized quick to-full     # FULL 모드로 복원
 - [x] 15. performance - 성능 최적화 설정
 - [x] 16. expand-path - 특정 경로 확장
 - [x] 17. filter-branch - 브랜치 필터 설정 (특정 브랜치만 표시)
-- [x] 18. clear-filter - 브랜치 필터 제거 (모든 브랜치 표시)
-- [ ] 19. restore-branch - (DEPRECATED - 사용하지 않음)
+- [x] 18. clear-filter-branch - 브랜치 필터 제거 (모든 브랜치 표시)
+- [x] 19. restore-branch - (DEPRECATED - 사용하지 않음)
 - [ ] 20. shallow - 히스토리 줄이기
 - [ ] 21. unshallow - 히스토리 복원
 - [ ] 22. check-shallow - 히스토리 상태 확인
@@ -536,7 +536,7 @@ ga opt quick to-slim
    - 프로젝트별 설정 저장
 ```
 
-### 18. clear-filter (`src/cmd/optimized/workspace/18_clear_filter_branch.go`)
+### 18. clear-filter-branch (`src/cmd/optimized/workspace/18_clear_filter_branch.go`)
 **상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 브랜치 필터 제거 (모든 브랜치 표시)
 **구현 내용**:
@@ -559,7 +559,7 @@ ga opt quick to-slim
 ```
 
 ### 19. restore-branch (`src/cmd/optimized/workspace/19_restore_branch.go`)
-**상태**: ❌ DEPRECATED - 사용하지 않음
+**상태**: ✅ DEPRECATED 처리 완료 (2025-08-27)
 **목적**: ~~특정 브랜치만 전체 복원~~ (더 이상 사용하지 않음)
 **구현 내용**:
 ```bash
@@ -886,10 +886,10 @@ feat(opt): implement 17-filter-branch - branch-specific filters
 test(opt): add tests for 17-filter-branch filter application
 docs(opt): document 17-filter-branch branch filtering
 
-# 18. clear-filter
-feat(opt): implement 18-clear-filter - remove all filters
-test(opt): add tests for 18-clear-filter cleanup process
-docs(opt): document 18-clear-filter filter removal
+# 18. clear-filter-branch
+feat(opt): implement 18-clear-filter-branch - remove all branch filters
+test(opt): add tests for 18-clear-filter-branch cleanup process
+docs(opt): document 18-clear-filter-branch filter removal
 
 # 19. restore-branch
 feat(opt): implement 19-restore-branch - restore specific branch

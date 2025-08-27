@@ -77,7 +77,7 @@ func NewOptimizedCmd() *cobra.Command {
 	workspaceCmd.AddCommand(
 		workspace.NewExpandPathCmd(),      // 16. Expand Path
 		workspace.NewFilterBranchCmd(),    // 17. Filter Branch
-		workspace.NewClearFilterCmd(),     // 18. Clear Filter
+		workspace.NewClearFilterBranchCmd(),     // 18. Clear Filter Branch
 		workspace.NewRestoreBranchCmd(),   // 19. Restore Branch
 	)
 	

@@ -10,8 +10,8 @@ import (
 	"workingcli/src/utils"
 )
 
-// NewClearFilterCmd creates the Clear Filter command
-func NewClearFilterCmd() *cobra.Command {
+// NewClearFilterBranchCmd creates the Clear Filter Branch command
+func NewClearFilterBranchCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "clear-filter",
 		Short: "브랜치 필터 제거 (모든 브랜치 표시)",
