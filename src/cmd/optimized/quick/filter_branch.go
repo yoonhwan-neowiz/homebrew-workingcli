@@ -1,4 +1,4 @@
-package workspace
+package quick
 
 import (
 	"bufio"

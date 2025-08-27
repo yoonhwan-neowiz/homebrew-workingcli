@@ -11,27 +11,27 @@ import (
 	"workingcli/src/utils"
 )
 
-// NewShallowAllCmd creates the Shallow All Submodules command
-func NewShallowAllCmd() *cobra.Command {
+// NewShallowCmd creates the Shallow Submodules command
+func NewShallowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "shallow-all [depth]",
-		Short: "모든 서브모듈을 Shallow Clone으로 변환",
-		Long: `모든 서브모듈을 Shallow Clone으로 변환합니다.
+		Use:   "shallow [depth]",
+		Short: "서브모듈을 Shallow Clone으로 변환 (recursive)",
+		Long: `모든 서브모듈을 Shallow Clone으로 변환합니다 (recursive).
 depth를 지정하지 않으면 기본값 1(최신 1개 커밋)로 설정됩니다.
 각 서브모듈의 히스토리를 제한하여 디스크 공간을 절약합니다.
 
 예시:
-  ga opt submodule shallow-all        # depth=1로 설정 (기본값)
-  ga opt submodule shallow-all 5      # 최근 5개 커밋만 유지
-  ga opt submodule shallow-all 10     # 최근 10개 커밋만 유지`,
+  ga opt submodule shallow        # depth=1로 설정 (기본값)
+  ga opt submodule shallow 5      # 최근 5개 커밋만 유지
+  ga opt submodule shallow 10     # 최근 10개 커밋만 유지`,
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			runShallowAll(args)
+			runShallow(args)
 		},
 	}
 }
 
-func runShallowAll(args []string) {
+func runShallow(args []string) {
 	// depth 파라미터 처리
 	depth := 1
 	if len(args) > 0 {

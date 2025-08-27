@@ -10,12 +10,12 @@ import (
 	"workingcli/src/utils"
 )
 
-// NewUnshallowAllCmd creates the Unshallow All Submodules command
-func NewUnshallowAllCmd() *cobra.Command {
+// NewUnshallowCmd creates the Unshallow Submodules command
+func NewUnshallowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "unshallow-all",
-		Short: "모든 서브모듈 히스토리 복원",
-		Long: `모든 서브모듈의 전체 히스토리를 복원합니다.
+		Use:   "unshallow",
+		Short: "서브모듈 히스토리 복원 (recursive)",
+		Long: `모든 서브모듈의 전체 히스토리를 복원합니다 (recursive).
 Shallow 상태의 서브모듈을 완전한 저장소로 변환합니다.
 
 실행 내용:
@@ -24,12 +24,12 @@ Shallow 상태의 서브모듈을 완전한 저장소로 변환합니다.
 
 ⚠️ 주의: 서브모듈 크기에 따라 상당한 디스크 공간이 필요할 수 있습니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runUnshallowAll()
+			runUnshallow()
 		},
 	}
 }
 
-func runUnshallowAll() {
+func runUnshallow() {
 	// 서브모듈 확인
 	submoduleInfo := utils.GetSubmoduleInfo()
 	count, _ := submoduleInfo["count"].(int)
