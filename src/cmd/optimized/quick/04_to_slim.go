@@ -111,16 +111,37 @@ func runToSlim() {
 	// 1. Sparse Checkout 설정
 	fmt.Println("\n[1/5] Sparse Checkout 설정...")
 	
-	// sparsePaths가 비어있거나 "*"만 있으면 sparse-checkout 건너뛰기
+	// sparsePaths가 비어있거나 "*"만 있으면 README.md만 포함
 	skipSparse := len(sparsePaths) == 0 || (len(sparsePaths) == 1 && sparsePaths[0] == "*")
 	
 	if skipSparse {
-		fmt.Println("  → Sparse Checkout 건너뜀 (모든 파일 유지)")
-		// sparse-checkout이 이미 활성화되어 있다면 비활성화
-		runGitCommand("sparse-checkout", "disable")
-	} else {
+		// 기본값으로 README.md만 포함 (clone-slim과 동일)
+		fmt.Println("  → 기본 설정 적용 (README.md만 포함)")
 		runGitCommand("config", "core.sparseCheckout", "true")
-		runGitCommand("sparse-checkout", "init", "--cone")
+		runGitCommand("sparse-checkout", "init", "--no-cone")
+		runGitCommand("sparse-checkout", "set", "README.md")
+		fmt.Println("  → README.md 파일만 유지")
+	} else {
+		// 사용자 지정 경로가 있는 경우
+		runGitCommand("config", "core.sparseCheckout", "true")
+		
+		// 경로에 개별 파일이 포함되어 있는지 확인
+		hasFiles := false
+		for _, path := range sparsePaths {
+			if !strings.HasSuffix(path, "/") && strings.Contains(path, ".") {
+				hasFiles = true
+				break
+			}
+		}
+		
+		if hasFiles {
+			// 파일이 포함된 경우 non-cone 모드 사용
+			runGitCommand("sparse-checkout", "init", "--no-cone")
+		} else {
+			// 디렉토리만 있는 경우 cone 모드 사용 (더 빠름)
+			runGitCommand("sparse-checkout", "init", "--cone")
+		}
+		
 		args := append([]string{"sparse-checkout", "set"}, sparsePaths...)
 		runGitCommand(args...)
 		fmt.Printf("  → %d개 경로 설정됨\n", len(sparsePaths))
