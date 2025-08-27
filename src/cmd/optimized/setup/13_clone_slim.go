@@ -154,26 +154,22 @@ func executeCloneSlim(args []string) {
 		fmt.Println("   ✅ 파일 체크아웃 완료")
 	}
 	
-	// 4. 서브모듈 초기화 (있는 경우)
-	fmt.Println("\n4️⃣ 서브모듈 확인 및 초기화...")
+	// 4. 서브모듈 초기화 (무조건 실행)
+	fmt.Println("\n4️⃣ 서브모듈 초기화...")
 	
-	// .gitmodules 파일 확인
-	if _, err := os.Stat(".gitmodules"); err == nil {
-		fmt.Println("   서브모듈 발견! 최적화 모드로 초기화...")
-		submoduleCmd := exec.Command("git", "submodule", "update", 
-			"--init",
-			"--filter=blob:limit=50k",
-			"--depth=1")
-		submoduleCmd.Stdout = os.Stdout
-		submoduleCmd.Stderr = os.Stderr
-		
-		if err := submoduleCmd.Run(); err != nil {
-			fmt.Printf("⚠️ 서브모듈 초기화 실패 (계속 진행): %v\n", err)
-		} else {
-			fmt.Println("   ✅ 서브모듈 초기화 완료")
-		}
+	// .gitmodules 체크 없이 무조건 실행
+	submoduleCmd := exec.Command("git", "submodule", "update", 
+		"--init",
+		"--depth=1",
+		"--recursive")
+	submoduleCmd.Stdout = os.Stdout
+	submoduleCmd.Stderr = os.Stderr
+	
+	if err := submoduleCmd.Run(); err != nil {
+		// 서브모듈이 없는 경우도 에러가 아니므로 경고만 표시
+		fmt.Printf("ℹ️ 서브모듈 처리 완료 (서브모듈이 없을 수 있음)\n")
 	} else {
-		fmt.Println("   서브모듈 없음")
+		fmt.Println("   ✅ 서브모듈 초기화 완료")
 	}
 	
 	// 5. 성능 설정 적용
