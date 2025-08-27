@@ -23,7 +23,8 @@
   ```
   "mcp__zen__chat으로 make.function.md의 05번 to-full 명세에 따라 
    src/cmd/optimized/quick/05_to_full.go 구현해줘. 
-   utils/git.go와 utils/utils.go 유틸리티 활용"
+   utils/git.go와 utils/utils.go 유틸리티 활용. 
+   src/cmd/optimized/quick/04_to_slim.go 구현 참고."
   ```
 
 #### 2단계: Claude 검증 및 개선 (claude-opus-4.1)

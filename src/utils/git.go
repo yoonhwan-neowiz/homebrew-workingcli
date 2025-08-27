@@ -592,3 +592,46 @@ func GetBranches() ([]string, int) {
 	
 	return localBranches, remoteCount
 }
+
+// GetCurrentSparsePaths returns the current list of sparse checkout paths
+func GetCurrentSparsePaths() []string {
+	cmd := exec.Command("git", "sparse-checkout", "list")
+	output, err := cmd.Output()
+	if err != nil {
+		return []string{}
+	}
+	
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	var paths []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			paths = append(paths, line)
+		}
+	}
+	return paths
+}
+
+// CheckConeMode checks if sparse-checkout is in cone mode
+func CheckConeMode() bool {
+	cmd := exec.Command("git", "config", "core.sparseCheckoutCone")
+	output, err := cmd.Output()
+	if err != nil {
+		// If config doesn't exist, default is cone mode in newer Git versions
+		return true
+	}
+	return strings.TrimSpace(string(output)) != "false"
+}
+
+// RunGitCommand runs a git command and returns the output
+func RunGitCommand(args ...string) error {
+	cmd := exec.Command("git", args...)
+	return cmd.Run()
+}
+
+// PathExistsInRepo checks if a path exists in the git repository
+func PathExistsInRepo(path string) bool {
+	cmd := exec.Command("git", "ls-files", "--error-unmatch", path)
+	err := cmd.Run()
+	return err == nil
+}
