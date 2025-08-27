@@ -1,6 +1,6 @@
 # Git 저장소 최적화 명령어 구현 가이드
 
-## 📊 구현 진행률: 26/28 (93%)
+## 📊 구현 진행률: 26/33 (79%)
 
 ## 🎯 핵심 구현 전략 - AI 협업 워크플로우
 
@@ -24,9 +24,9 @@
 - **명령 예시**: 
   ```
   "mcp__zen__chat으로 make.function.md의 05번 to-full 명세에 따라 
-   src/cmd/optimized/quick/05_to_full.go 구현해줘. 
+   src/cmd/optimized/quick/to_full.go 구현해줘. 
    utils/git.go와 utils/utils.go 유틸리티 활용. 
-   src/cmd/optimized/quick/04_to_slim.go, src/config/config.go 구현 참고 및 이용."
+   src/cmd/optimized/quick/to_slim.go, src/config/config.go 구현 참고 및 이용."
   ```
 
 #### 2단계: Claude 검증 및 개선 (claude-opus-4.1)
@@ -99,41 +99,113 @@ ga opt help commands           # 전체 명령어 목록 표시
 ga op quick status             # 최적화 상태 확인
 ga opt quick to-slim           # SLIM 모드로 전환
 ga optimized quick to-full     # FULL 모드로 복원
+
+# 서브모듈 명령어 (submodule 카테고리):
+ga opt submodule status        # 서브모듈 상태 확인
+ga op submodule to-slim        # 서브모듈 SLIM 전환
+ga opt submodule to-full       # 서브모듈 FULL 복원
+ga op submodule expand-slim    # 서브모듈 경로 확장
+ga opt submodule filter-branch # 서브모듈 브랜치 필터
 ```
 
+## 📁 파일명 규칙
+- **모든 명령어**: `{명령어}.go` (번호 없이)
+  - help: `workflow.go`, `commands.go`
+  - quick: `status.go`, `to_slim.go`
+  - submodule: `status.go`, `to_slim.go`
+  
+- **실제 명령어 사용**: 카테고리별로 동일한 명령어명 사용 가능
+  - 메인: `ga opt quick status`
+  - 서브모듈: `ga opt submodule status` (카테고리로 구분)
+
 ## 📋 개요
-이 문서는 Git 저장소 최적화를 위한 28개 명령어의 구현 상세를 담고 있습니다.
+이 문서는 Git 저장소 최적화를 위한 33개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (26/28)
-- [x] 01. workflow - Git 최적화 워크플로우 가이드
-- [x] 02. commands - 전체 명령어 목록
-- [x] 03. status - 현재 최적화 상태 확인
-- [x] 04. to-slim - SLIM 모드로 전환
-- [x] 05. to-full - FULL 모드로 복원
-- [x] 06. expand-slim - 선택적 경로 확장
-- [x] 07. expand-filter - Partial Clone 필터 제거
-- [x] 08. expand (통합) - 히스토리 확장 (파라미터로 개수 지정)
-- [x] 09. expand-50 - (deprecated - expand 50 사용)
-- [x] 10. expand-100 - (deprecated - expand 100 사용)
-- [x] 11. auto-find-merge-base - 브랜치 병합점 자동 찾기
-- [x] 12. check-merge - 병합 가능 여부 확인
-- [x] 13. clone-slim - 최적화된 클론
-- [x] 14. migrate - (deprecated - to-slim 사용)
-- [x] 15. performance - 성능 최적화 설정
-- [x] 16. expand-path - 특정 경로 확장
-- [x] 17. filter-branch - 브랜치 필터 설정 (특정 브랜치만 표시)
-- [x] 18. clear-filter-branch - 브랜치 필터 제거 (모든 브랜치 표시)
-- [x] 19. restore-branch - (DEPRECATED - 사용하지 않음)
-- [x] 20. shallow - 히스토리 줄이기
-- [x] 21. unshallow - 히스토리 복원
-- [x] 22. check-shallow - 히스토리 상태 확인
-- [x] 23. check-filter - 브랜치 필터 확인
-- [x] 24. config - 설정 백업/복원/확인
-- [x] 25. shallow-all - 모든 서브모듈 shallow 변환
-- [x] 26. unshallow-all - 모든 서브모듈 히스토리 복원
-- [ ] 27. optimize-all - 모든 서브모듈 SLIM 최적화
-- [ ] 28. status-all - 모든 서브모듈 상태 확인
+## 🎯 구현 진행 상황 (26/33)
+- [x] help.workflow - Git 최적화 워크플로우 가이드
+- [x] help.commands - 전체 명령어 목록
+- [x] quick.status - 현재 최적화 상태 확인
+- [x] quick.to-slim - SLIM 모드로 전환
+- [x] quick.to-full - FULL 모드로 복원
+- [x] quick.expand-slim - 선택적 경로 확장
+- [x] quick.expand-filter - Partial Clone 필터 제거
+- [x] advanced.expand - 히스토리 확장 (파라미터로 개수 지정)
+- [x] advanced.expand-50 - (deprecated - expand 50 사용)
+- [x] advanced.expand-100 - (deprecated - expand 100 사용)
+- [x] quick.auto-find-merge-base - 브랜치 병합점 자동 찾기
+- [x] advanced.check-merge - 병합 가능 여부 확인
+- [x] setup.clone-slim - 최적화된 클론
+- [x] setup.migrate - (deprecated - to-slim 사용)
+- [x] setup.performance - 성능 최적화 설정
+- [x] workspace.expand-path - 특정 경로 확장
+- [x] quick.filter-branch - 브랜치 필터 설정 (특정 브랜치만 표시)
+- [x] quick.clear-filter-branch - 브랜치 필터 제거 (모든 브랜치 표시)
+- [x] workspace.restore-branch - (DEPRECATED - 사용하지 않음)
+- [x] quick.shallow - 히스토리 줄이기
+- [x] quick.unshallow - 히스토리 복원
+- [x] advanced.check-shallow - 히스토리 상태 확인
+- [x] advanced.check-filter - 브랜치 필터 확인
+- [x] advanced.config - 설정 백업/복원/확인
+- [ ] submodule.status - 서브모듈별 최적화 상태 확인
+- [ ] submodule.to-slim - 서브모듈을 SLIM 모드로 전환
+- [ ] submodule.to-full - 서브모듈을 FULL 모드로 복원
+- [ ] submodule.expand-slim - 서브모듈 선택적 경로 확장
+- [ ] submodule.expand-filter - 서브모듈 Partial Clone 필터 제거
+- [x] submodule.shallow - 서브모듈 shallow 변환 (recursive)
+- [x] submodule.unshallow - 서브모듈 히스토리 복원 (recursive)
+- [ ] submodule.filter-branch - 서브모듈 브랜치 필터 설정
+- [ ] submodule.clear-filter-branch - 서브모듈 브랜치 필터 제거
+
+---
+
+## 📂 구현 파일 현황
+
+### 카테고리별 명령어 구성
+
+#### Quick 카테고리 (자주 사용하는 최적화 기능)
+| 파일명 | 명령어 | 설명 | 상태 |
+|--------|--------|------|------|
+| `status.go` | `status` | 현재 최적화 상태 확인 | ✅ 구현 완료 |
+| `to_slim.go` | `to-slim` | SLIM 모드로 전환 | ✅ 구현 완료 |
+| `to_full.go` | `to-full` | FULL 모드로 복원 | ✅ 구현 완료 |
+| `expand_slim.go` | `expand-slim` | 선택적 경로 확장 | ✅ 구현 완료 |
+| `expand_filter.go` | `expand-filter` | Partial Clone 필터 제거 | ✅ 구현 완료 |
+| `auto_find_merge_base.go` | `auto-find-merge-base` | 브랜치 병합점 자동 찾기 | ✅ 구현 완료 |
+| `filter_branch.go` | `filter-branch` | 브랜치 필터 설정 | ✅ 구현 완료 |
+| `clear_filter_branch.go` | `clear-filter` | 브랜치 필터 제거 | ✅ 구현 완료 |
+| `shallow.go` | `shallow` | 히스토리 줄이기 | ✅ 구현 완료 |
+| `unshallow.go` | `unshallow` | 히스토리 복원 | ✅ 구현 완료 |
+
+#### Advanced 카테고리 (고급 최적화 기능)
+| 파일명 | 명령어 | 설명 | 상태 |
+|--------|--------|------|------|
+| `expand.go` | `expand` | 히스토리 확장 (기본 10개) | ✅ 구현 완료 |
+| `expand_50.go` | `expand-50` | 히스토리 50개 확장 (deprecated) | ✅ 구현 완료 |
+| `expand_100.go` | `expand-100` | 히스토리 100개 확장 (deprecated) | ✅ 구현 완료 |
+| `check_merge.go` | `check-merge` | 병합 가능 여부 확인 | ✅ 구현 완료 |
+| `check_shallow.go` | `check-shallow` | 히스토리 상태 확인 | ✅ 구현 완료 |
+| `check_filter.go` | `check-filter` | 브랜치 필터 확인 | ✅ 구현 완료 |
+| `config.go` | `config` | 설정 백업/복원/확인 | ✅ 구현 완료 |
+
+#### Workspace 카테고리 (작업 공간 관리)
+| 파일명 | 명령어 | 설명 | 상태 |
+|--------|--------|------|------|
+| `expand_path.go` | `expand-path` | 특정 경로 확장 | ✅ 구현 완료 |
+| `restore_branch.go` | `restore-branch` | (DEPRECATED) | ✅ DEPRECATED |
+
+#### Submodule 카테고리 (서브모듈 최적화)
+| 파일명 | 명령어 | 설명 | 상태 |
+|--------|--------|------|------|
+| `status.go` | `status` | 서브모듈 상태 확인 | ⏳ 대기 |
+| `to_slim.go` | `to-slim` | SLIM 모드 전환 | ⏳ 대기 |
+| `to_full.go` | `to-full` | FULL 모드 복원 | ⏳ 대기 |
+| `expand_slim.go` | `expand-slim` | 경로 확장 | ⏳ 대기 |
+| `expand_filter.go` | `expand-filter` | 필터 제거 | ⏳ 대기 |
+| `shallow.go` | `shallow` | shallow 변환 (recursive) | ✅ 구현 완료 |
+| `unshallow.go` | `unshallow` | 히스토리 복원 (recursive) | ✅ 구현 완료 |
+| `filter_branch.go` | `filter-branch` | 브랜치 필터 | ⏳ 대기 |
+| `clear_filter.go` | `clear-filter` | 필터 제거 | ⏳ 대기 |
 
 ---
 
@@ -193,7 +265,7 @@ src/
 
 ## 📚 함수별 구현 상세
 
-### 01. workflow (`src/cmd/optimized/help/01_workflow.go`)
+### help.workflow (`src/cmd/optimized/help/workflow.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: Git 최적화 워크플로우 가이드 표시
 **구현 내용**:
@@ -212,7 +284,7 @@ src/
 4. 권장 사용 패턴과 예시 명령어 제공
 ```
 
-### 02. commands (`src/cmd/optimized/help/02_commands.go`)
+### help.commands (`src/cmd/optimized/help/commands.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: 28개 전체 명령어 목록 표시
 **구현 내용**: 
@@ -229,7 +301,7 @@ src/
 3. 사용 예시 제공
 ```
 
-### 03. status (`src/cmd/optimized/quick/03_status.go`)
+### quick.status (`src/cmd/optimized/quick/status.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: 현재 저장소의 최적화 상태 확인
 **구현 내용**:
@@ -263,7 +335,7 @@ Shallow: [활성/비활성] (depth: N)
 서브모듈: N개 (최적화: N개)
 ```
 
-### 04. to-slim (`src/cmd/optimized/quick/04_to_slim.go`)
+### quick.to-slim (`src/cmd/optimized/quick/to_slim.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: FULL → SLIM 모드 전환
 **구현 내용**:
@@ -289,7 +361,7 @@ Shallow: [활성/비활성] (depth: N)
    du -sh .git
 ```
 
-### 05. to-full (`src/cmd/optimized/quick/05_to_full.go`)
+### quick.to-full (`src/cmd/optimized/quick/to_full.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: SLIM → FULL 모드 복원
 **구현 내용**:
@@ -311,7 +383,7 @@ Shallow: [활성/비활성] (depth: N)
    du -sh .git
 ```
 
-### 06. expand-slim (`src/cmd/optimized/quick/06_expand_slim.go`)
+### quick.expand-slim (`src/cmd/optimized/quick/expand_slim.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: SLIM 상태에서 선택적 경로 확장
 **구현 내용**:
@@ -330,7 +402,7 @@ Shallow: [활성/비활성] (depth: N)
 4. 확장 결과 표시
 ```
 
-### 07. expand-filter (`src/cmd/optimized/quick/07_expand_filter.go`)
+### quick.expand-filter (`src/cmd/optimized/quick/expand_filter.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: Partial Clone 필터 제거 (Sparse는 유지)
 **구현 내용**:
@@ -347,12 +419,12 @@ Shallow: [활성/비활성] (depth: N)
 4. 결과 확인
 ```
 
-### 08. expand (통합 명령어) (`src/cmd/optimized/quick/08_expand_10.go`)
-**상태**: ✅ 구현 완료 (2025-08-26)
+### advanced.expand (`src/cmd/optimized/advanced/expand.go`)
+**상태**: ✅ 구현 완료 (2025-08-26) - Advanced로 이동
 **목적**: 히스토리 확장 (파라미터로 개수 지정)
 **구현 내용**:
 ```bash
-# 사용법: ga opt quick expand [depth]
+# 사용법: ga opt advanced expand [depth]
 # depth를 지정하지 않으면 기본값 10개
 
 1. 현재 depth 확인
@@ -360,32 +432,32 @@ Shallow: [활성/비활성] (depth: N)
 3. 확장된 히스토리 확인
 
 # 사용 예시:
-ga opt quick expand        # 10개 확장 (기본값)
-ga opt quick expand 10     # 10개 확장
-ga opt quick expand 50     # 50개 확장  
-ga opt quick expand 100    # 100개 확장
-ga opt quick expand 66     # 66개 확장 (커스텀)
+ga opt advanced expand        # 10개 확장 (기본값)
+ga opt advanced expand 10     # 10개 확장
+ga opt advanced expand 50     # 50개 확장  
+ga opt advanced expand 100    # 100개 확장
+ga opt advanced expand 66     # 66개 확장 (커스텀)
 ```
 
-### 09. expand-50 (`src/cmd/optimized/quick/09_expand_50.go`)
-**상태**: ✅ 구현 완료 (2025-08-26) - deprecated
+### advanced.expand-50 (`src/cmd/optimized/advanced/expand_50.go`)
+**상태**: ✅ 구현 완료 (2025-08-26) - deprecated, Advanced로 이동
 **목적**: 히스토리 50개 커밋 확장 (deprecated - expand 50 사용)
 **구현 내용**:
 ```bash
 # deprecated - 대신 사용:
-ga opt quick expand 50
+ga opt advanced expand 50
 ```
 
-### 10. expand-100 (`src/cmd/optimized/quick/10_expand_100.go`)
-**상태**: ✅ 구현 완료 (2025-08-26) - deprecated
+### advanced.expand-100 (`src/cmd/optimized/advanced/expand_100.go`)
+**상태**: ✅ 구현 완료 (2025-08-26) - deprecated, Advanced로 이동
 **목적**: 히스토리 100개 커밋 확장 (deprecated - expand 100 사용)
 **구현 내용**:
 ```bash
 # deprecated - 대신 사용:
-ga opt quick expand 100
+ga opt advanced expand 100
 ```
 
-### 11. auto-find-merge-base (`src/cmd/optimized/quick/11_auto_find_merge_base.go`)
+### quick.auto-find-merge-base (`src/cmd/optimized/quick/auto_find_merge_base.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: 두 브랜치의 머지베이스 자동 찾기 (히스토리 자동 확장)
 **구현 내용**:
@@ -407,7 +479,8 @@ ga opt quick expand 100
    - 각 브랜치까지의 거리
 ```
 
-### 12. check-merge (`src/cmd/optimized/quick/12_check_merge.go`)
+### advanced.check-merge (`src/cmd/optimized/advanced/check_merge.go`)
+**상태**: ✅ 구현 완료 (2025-08-26) - Advanced로 이동
 **목적**: 브랜치 병합 가능 여부 확인
 **구현 내용**:
 ```bash
@@ -421,7 +494,7 @@ ga opt quick expand 100
    git merge --abort
 ```
 
-### 13. clone-slim (`src/cmd/optimized/setup/13_clone_slim.go`)
+### setup.clone-slim (`src/cmd/optimized/setup/clone_slim.go`)
 **상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 처음부터 최적화된 클론
 **구현 내용**:
@@ -447,7 +520,7 @@ ga opt quick expand 100
    git config gc.writeCommitGraph true
 ```
 
-### 14. migrate (`src/cmd/optimized/setup/14_migrate.go`)
+### setup.migrate (`src/cmd/optimized/setup/migrate.go`)
 **상태**: ✅ 구현 완료 (2025-08-26) - deprecated
 **목적**: 기존 저장소를 SLIM으로 변환 (deprecated - to-slim 사용)
 **구현 내용**:
@@ -461,7 +534,7 @@ ga opt quick to-slim
 - to-slim이 더 직관적이고 quick 카테고리에 있어 접근성 좋음
 ```
 
-### 15. performance (`src/cmd/optimized/setup/15_performance.go`)
+### setup.performance (`src/cmd/optimized/setup/performance.go`)
 **상태**: ✅ 구현 완료 (2025-08-26)
 **목적**: 성능 최적화 설정 적용
 **구현 내용**:
@@ -483,7 +556,7 @@ ga opt quick to-slim
 4. 설정 확인 표시
 ```
 
-### 16. expand-path (`src/cmd/optimized/workspace/16_expand_path.go`)
+### workspace.expand-path (`src/cmd/optimized/workspace/expand_path.go`)
 **상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 특정 경로를 Sparse Checkout에 추가
 **구현 내용**:
@@ -510,8 +583,8 @@ ga opt quick to-slim
    - 파일/폴더 구분 표시
 ```
 
-### 17. filter-branch (`src/cmd/optimized/workspace/17_filter_branch.go`)
-**상태**: ✅ 구현 완료 (2025-08-27)
+### quick.filter-branch (`src/cmd/optimized/quick/filter_branch.go`)
+**상태**: ✅ 구현 완료 (2025-08-27) - Quick으로 이동
 **목적**: 브랜치 필터 설정 (특정 브랜치만 표시)
 **구현 내용**:
 ```bash
@@ -538,8 +611,8 @@ ga opt quick to-slim
    - 프로젝트별 설정 저장
 ```
 
-### 18. clear-filter-branch (`src/cmd/optimized/workspace/18_clear_filter_branch.go`)
-**상태**: ✅ 구현 완료 (2025-08-27)
+### quick.clear-filter-branch (`src/cmd/optimized/quick/clear_filter_branch.go`)
+**상태**: ✅ 구현 완료 (2025-08-27) - Quick으로 이동
 **목적**: 브랜치 필터 제거 (모든 브랜치 표시)
 **구현 내용**:
 ```bash
@@ -560,7 +633,7 @@ ga opt quick to-slim
    - 원격 브랜치 개수 표시
 ```
 
-### 19. restore-branch (`src/cmd/optimized/workspace/19_restore_branch.go`)
+### workspace.restore-branch (`src/cmd/optimized/workspace/restore_branch.go`)
 **상태**: ✅ DEPRECATED 처리 완료 (2025-08-27)
 **목적**: ~~특정 브랜치만 전체 복원~~ (더 이상 사용하지 않음)
 **구현 내용**:
@@ -569,8 +642,8 @@ ga opt quick to-slim
 # 대신 17번 filter-branch와 18번 clear-filter를 사용하세요
 ```
 
-### 20. shallow (`src/cmd/optimized/advanced/20_shallow.go`)
-**상태**: ✅ 구현 완료 (2025-08-27)
+### quick.shallow (`src/cmd/optimized/quick/shallow.go`)
+**상태**: ✅ 구현 완료 (2025-08-27) - Quick으로 이동
 **목적**: 히스토리를 지정된 depth로 줄이기 (기본값: 1)
 **구현 내용**:
 ```bash
@@ -581,8 +654,8 @@ ga opt quick to-slim
 5. 결과 확인 (새로운 커밋 수 표시)
 ```
 
-### 21. unshallow (`src/cmd/optimized/advanced/21_unshallow.go`)
-**상태**: ✅ 구현 완료 (2025-08-27)
+### quick.unshallow (`src/cmd/optimized/quick/unshallow.go`)
+**상태**: ✅ 구현 완료 (2025-08-27) - Quick으로 이동
 **목적**: 전체 히스토리 복원
 **구현 내용**:
 ```bash
@@ -590,7 +663,7 @@ ga opt quick to-slim
 2. 결과 확인
 ```
 
-### 22. check-shallow (`src/cmd/optimized/advanced/22_check_shallow.go`)
+### advanced.check-shallow (`src/cmd/optimized/advanced/check_shallow.go`)
 **상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 현재 shallow 상태 확인
 **구현 내용**:
@@ -607,7 +680,7 @@ ga opt quick to-slim
 4. 결과 표시
 ```
 
-### 23. check-filter (`src/cmd/optimized/advanced/23_check_filter.go`)
+### advanced.check-filter (`src/cmd/optimized/advanced/check_filter.go`)
 **상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 현재 필터 설정 확인
 **구현 내용**:
@@ -621,7 +694,7 @@ ga opt quick to-slim
 3. 결과 표시
 ```
 
-### 24. config (`src/cmd/optimized/advanced/24_config.go`)
+### advanced.config (`src/cmd/optimized/advanced/config.go`)
 **상태**: ✅ 구현 완료 (2025-08-27)
 **목적**: 최적화 설정 관리 (백업/복원/확인)
 **구현 내용**:
@@ -649,31 +722,30 @@ ga opt quick to-slim
 3. 백업 정보 요약
 ```
 
-### 25. shallow-all (`src/cmd/optimized/submodule/25_shallow_all.go`)
-**상태**: ✅ 구현 완료 (2025-08-27)
-**목적**: 모든 서브모듈을 Shallow Clone으로 변환 (depth 파라미터 지원)
+### submodule.status (`src/cmd/optimized/submodule/status.go`)
+**목적**: 특정 서브모듈의 최적화 상태 확인 (quick.status의 서브모듈 버전)
 **구현 내용**:
 ```bash
-# 사용법: ga opt submodule shallow-all [depth]
+# 사용법: ga opt submodule shallow [depth]
 # depth를 지정하지 않으면 기본값 1
+# 모든 서브모듈에 recursive로 적용
 
 1. depth 파라미터 처리 (기본값: 1)
 2. 서브모듈 목록 확인
-3. 각 서브모듈에 대해:
+3. 각 서브모듈에 대해 (recursive):
    - 현재 shallow 상태 확인
    - git pull --depth=[depth] 실행
    - gc로 오래된 객체 정리
 4. 결과 요약 표시 (성공/실패 카운트)
 
 # 사용 예시:
-ga opt submodule shallow-all        # depth=1 (기본값)
-ga opt submodule shallow-all 5      # depth=5로 설정
-ga opt submodule shallow-all 10     # depth=10으로 설정
+ga opt submodule shallow        # depth=1 (기본값)
+ga opt submodule shallow 5      # depth=5로 설정
+ga opt submodule shallow 10     # depth=10으로 설정
 ```
 
-### 26. unshallow-all (`src/cmd/optimized/submodule/26_unshallow_all.go`)
-**상태**: ✅ 구현 완료 (2025-08-27)
-**목적**: 모든 서브모듈의 전체 히스토리 복원
+### submodule.to-slim (`src/cmd/optimized/submodule/to_slim.go`)
+**목적**: 특정 서브모듈을 SLIM 모드로 전환 (quick.to-slim의 서브모듈 버전)
 **구현 내용**:
 ```bash
 1. 사용자 확인 프롬프트 (대용량 다운로드 경고)
@@ -690,31 +762,106 @@ ga opt submodule shallow-all 10     # depth=10으로 설정
    - 각 서브모듈별 크기 증가량
 ```
 
-### 27. optimize-all (`src/cmd/optimized/submodule/27_optimize_all.go`)
-**목적**: 모든 서브모듈 SLIM 최적화
+### submodule.to-full (`src/cmd/optimized/submodule/to_full.go`)
+**목적**: 특정 서브모듈을 FULL 모드로 복원 (quick.to-full의 서브모듈 버전)
 **구현 내용**:
 ```bash
-1. 각 서브모듈에 대해:
-   - Partial Clone 필터 적용
-   - Sparse Checkout 설정
-   - Shallow 설정
-   
-2. git submodule foreach 실행
-3. 결과 통계 표시
+# 사용자 입력: 서브모듈 이름 (없으면 선택 메뉴)
+
+1. 서브모듈 선택
+2. 해당 서브모듈로 이동 후:
+   - Partial Clone 필터 확인
+   - Sparse Checkout 상태 확인
+   - Shallow 상태 확인
+   - 디스크 사용량 확인
+3. 상태 표시 (quick.status와 동일 형식)
 ```
 
-### 28. status-all (`src/cmd/optimized/submodule/28_status_all.go`)
-**목적**: 모든 서브모듈 상태 확인
+### submodule.expand-slim (`src/cmd/optimized/submodule/expand_slim.go`)
+**목적**: 서브모듈의 선택적 경로 확장 (quick.expand-slim의 서브모듈 버전)
 **구현 내용**:
 ```bash
-1. git submodule foreach 실행:
-   - Partial Clone 상태
-   - Sparse Checkout 상태
-   - Shallow 상태
-   - 디스크 사용량
+# 사용자 입력: 서브모듈 이름 (없으면 선택 메뉴)
 
-2. 테이블 형식으로 출력:
-   서브모듈명 | 모드 | 필터 | Sparse | Shallow | 크기
+1. 서브모듈 선택
+2. 해당 서브모듈에서:
+   - Partial Clone 필터 적용
+   - Sparse Checkout 활성화
+   - 불필요한 객체 정리
+3. 결과 확인
+```
+
+### submodule.expand-filter (`src/cmd/optimized/submodule/expand_filter.go`)
+**목적**: 서브모듈의 Partial Clone 필터 제거 (quick.expand-filter의 서브모듈 버전)
+**구현 내용**:
+```bash
+# 사용자 입력: 서브모듈 이름 (없으면 선택 메뉴)
+
+1. 서브모듈 선택
+2. 해당 서브모듈에서:
+   - Sparse Checkout 해제
+   - 모든 객체 다운로드
+   - Partial Clone 필터 제거
+3. 결과 확인
+```
+
+### submodule.shallow (`src/cmd/optimized/submodule/shallow.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
+**목적**: 서브모듈을 Shallow Clone으로 변환 (depth 파라미터 지원, recursive)
+**구현 내용**:
+```bash
+# 사용자 입력: 서브모듈 이름, 확장할 경로
+
+1. 서브모듈 선택
+2. 해당 서브모듈에서:
+   - 현재 Sparse Checkout 목록 확인
+   - 경로 추가
+   - 필요한 객체 다운로드
+3. 확장 결과 표시
+```
+
+### submodule.unshallow (`src/cmd/optimized/submodule/unshallow.go`)
+**상태**: ✅ 구현 완료 (2025-08-27)
+**목적**: 서브모듈의 전체 히스토리 복원 (recursive)
+**구현 내용**:
+```bash
+# 사용자 입력: 서브모듈 이름 (없으면 선택 메뉴)
+
+1. 서브모듈 선택
+2. 해당 서브모듈에서:
+   - 현재 필터 확인
+   - 필터 제거
+   - 모든 blob 다운로드
+3. 결과 확인
+```
+
+### submodule.filter-branch (`src/cmd/optimized/submodule/filter_branch.go`)
+**목적**: 서브모듈의 브랜치 필터 설정 (quick.filter-branch의 서브모듈 버전)
+**구현 내용**:
+```bash
+# 사용자 입력: 서브모듈 이름, 필터 모드
+
+1. 서브모듈 선택
+2. 해당 서브모듈에서:
+   - 브랜치 목록 확인
+   - 필터 모드 선택 (single/multi)
+   - 브랜치 선택
+   - 필터 적용
+3. 필터링된 브랜치 목록 표시
+```
+
+### submodule.clear-filter (`src/cmd/optimized/submodule/clear_filter.go`)
+**목적**: 서브모듈의 브랜치 필터 제거 (quick.clear-filter-branch의 서브모듈 버전)
+**구현 내용**:
+```bash
+# 사용자 입력: 서브모듈 이름 (없으면 선택 메뉴)
+
+1. 서브모듈 선택
+2. 해당 서브모듈에서:
+   - 현재 필터 확인
+   - 사용자 확인 프롬프트
+   - 필터 제거
+3. 결과 확인 (모든 브랜치 표시)
 ```
 
 ---
@@ -818,13 +965,13 @@ func getDiskUsage(path string) string {
 ### 단계별 커밋 예시
 ```bash
 # 구현 단계
-feat(opt): implement 03-status - Git repository optimization status check
+feat(opt): implement status - Git repository optimization status check
 
 # 테스트 단계
-test(opt): add tests for 03-status command functionality
+test(opt): add tests for status command functionality
 
 # 문서화 단계
-docs(opt): update documentation for 03-status command usage
+docs(opt): update documentation for status command usage
 ```
 
 ---
@@ -833,160 +980,185 @@ docs(opt): update documentation for 03-status command usage
 
 ### Help 카테고리 (도움말)
 ```bash
-# 01. workflow
-feat(opt): implement 01-workflow - Git optimization workflow guide
-test(opt): add tests for 01-workflow help command
-docs(opt): document 01-workflow usage and examples
+# help.workflow
+feat(opt): implement workflow - Git optimization workflow guide
+test(opt): add tests for workflow help command
+docs(opt): document workflow usage and examples
 
-# 02. commands  
-feat(opt): implement 02-commands - complete command list display
-test(opt): add tests for 02-commands help display
-docs(opt): document 02-commands help system
+# help.commands  
+feat(opt): implement commands - complete command list display
+test(opt): add tests for commands help display
+docs(opt): document commands help system
 ```
 
 ### Quick 카테고리 (빠른 실행)
 ```bash
-# 03. status
-feat(opt): implement 03-status - repository optimization status check
-test(opt): add tests for 03-status metrics collection
-docs(opt): document 03-status output format and usage
+# quick.status
+feat(opt): implement status - repository optimization status check
+test(opt): add tests for status metrics collection
+docs(opt): document status output format and usage
 
-# 04. to-slim
-feat(opt): implement 04-to-slim - convert repository to SLIM mode
-test(opt): add tests for 04-to-slim conversion process
-docs(opt): document 04-to-slim migration workflow
+# quick.to-slim
+feat(opt): implement to-slim - convert repository to SLIM mode
+test(opt): add tests for to-slim conversion process
+docs(opt): document to-slim migration workflow
 
-# 05. to-full
-feat(opt): implement 05-to-full - restore repository to FULL mode
-test(opt): add tests for 05-to-full restoration process
-docs(opt): document 05-to-full recovery workflow
+# quick.to-full
+feat(opt): implement to-full - restore repository to FULL mode
+test(opt): add tests for to-full restoration process
+docs(opt): document to-full recovery workflow
 
-# 06. expand-slim
-feat(opt): implement 06-expand-slim - selective path expansion
-test(opt): add tests for 06-expand-slim path addition
-docs(opt): document 06-expand-slim usage scenarios
+# quick.expand-slim
+feat(opt): implement expand-slim - selective path expansion
+test(opt): add tests for expand-slim path addition
+docs(opt): document expand-slim usage scenarios
 
-# 07. expand-filter
-feat(opt): implement 07-expand-filter - remove Partial Clone filter
-test(opt): add tests for 07-expand-filter removal process
-docs(opt): document 07-expand-filter filter management
+# quick.expand-filter
+feat(opt): implement expand-filter - remove Partial Clone filter
+test(opt): add tests for expand-filter removal process
+docs(opt): document expand-filter filter management
 
-# 08. expand-10
-feat(opt): implement 08-expand-10 - extend history by 10 commits
-test(opt): add tests for 08-expand-10 depth expansion
-docs(opt): document 08-expand-10 history extension
+# advanced.expand
+feat(opt): implement expand - extend history by 10 commits
+test(opt): add tests for expand depth expansion
+docs(opt): document expand-10 history extension
 
-# 09. expand-50
-feat(opt): implement 09-expand-50 - extend history by 50 commits
-test(opt): add tests for 09-expand-50 depth expansion
-docs(opt): document 09-expand-50 history extension
+# advanced.expand-50
+feat(opt): implement expand-50 - extend history by 50 commits
+test(opt): add tests for expand-50 depth expansion
+docs(opt): document expand-50 history extension
 
-# 10. expand-100
-feat(opt): implement 10-expand-100 - extend history by 100 commits
-test(opt): add tests for 10-expand-100 depth expansion
-docs(opt): document 10-expand-100 history extension
+# advanced.expand-100
+feat(opt): implement expand-100 - extend history by 100 commits
+test(opt): add tests for expand-100 depth expansion
+docs(opt): document expand-100 history extension
 
-# 11. auto-find-merge-base
-feat(opt): implement 11-auto-find-merge-base - automatically locate merge base
-test(opt): add tests for 11-auto-find-merge-base detection
-docs(opt): document 11-auto-find-merge-base functionality
+# quick.auto-find-merge-base
+feat(opt): implement auto-find-merge-base - automatically locate merge base
+test(opt): add tests for auto-find-merge-base detection
+docs(opt): document auto-find-merge-base functionality
 
-# 12. check-merge-base
-feat(opt): implement 12-check-merge-base - verify merge base existence
-test(opt): add tests for 12-check-merge-base validation
-docs(opt): document 12-check-merge-base functionality
+# advanced.check-merge
+feat(opt): implement check-merge - verify merge base existence
+test(opt): add tests for check-merge validation
+docs(opt): document check-merge-base functionality
 ```
 
 ### Setup 카테고리 (초기 설정)
 ```bash
-# 13. clone-slim
-feat(opt): implement 13-clone-slim - optimized repository cloning
-test(opt): add tests for 13-clone-slim initialization
-docs(opt): document 13-clone-slim setup process
+# setup.clone-slim
+feat(opt): implement clone-slim - optimized repository cloning
+test(opt): add tests for clone-slim initialization
+docs(opt): document clone-slim setup process
 
-# 14. migrate
-feat(opt): implement 14-migrate - convert existing repo to SLIM
-test(opt): add tests for 14-migrate conversion workflow
-docs(opt): document 14-migrate migration strategy
+# setup.migrate
+feat(opt): implement migrate - convert existing repo to SLIM
+test(opt): add tests for migrate conversion workflow
+docs(opt): document migrate migration strategy
 
-# 15. performance
-feat(opt): implement 15-performance - apply performance settings
-test(opt): add tests for 15-performance configuration
-docs(opt): document 15-performance optimization settings
+# setup.performance
+feat(opt): implement performance - apply performance settings
+test(opt): add tests for performance configuration
+docs(opt): document performance optimization settings
 ```
 
 ### Workspace 카테고리 (작업공간)
 ```bash
-# 16. expand-path
-feat(opt): implement 16-expand-path - add specific paths to sparse
-test(opt): add tests for 16-expand-path path management
-docs(opt): document 16-expand-path selective expansion
+# workspace.expand-path
+feat(opt): implement expand-path - add specific paths to sparse
+test(opt): add tests for expand-path path management
+docs(opt): document expand-path selective expansion
 
-# 17. filter-branch
-feat(opt): implement 17-filter-branch - branch-specific filters
-test(opt): add tests for 17-filter-branch filter application
-docs(opt): document 17-filter-branch branch filtering
+# quick.filter-branch
+feat(opt): implement filter-branch - branch-specific filters
+test(opt): add tests for filter-branch filter application
+docs(opt): document filter-branch branch filtering
 
-# 18. clear-filter-branch
-feat(opt): implement 18-clear-filter-branch - remove all branch filters
-test(opt): add tests for 18-clear-filter-branch cleanup process
-docs(opt): document 18-clear-filter-branch filter removal
+# quick.clear-filter-branch
+feat(opt): implement clear-filter-branch - remove all branch filters
+test(opt): add tests for clear-filter-branch cleanup process
+docs(opt): document clear-filter-branch filter removal
 
-# 19. restore-branch
-feat(opt): implement 19-restore-branch - restore specific branch
-test(opt): add tests for 19-restore-branch restoration
-docs(opt): document 19-restore-branch branch recovery
+# workspace.restore-branch
+feat(opt): implement restore-branch - restore specific branch
+test(opt): add tests for restore-branch restoration
+docs(opt): document restore-branch branch recovery
 ```
 
 ### Advanced 카테고리 (고급)
 ```bash
-# 20. shallow
-feat(opt): implement 20-shallow - reduce history to depth 1
-test(opt): add tests for 20-shallow history reduction
-docs(opt): document 20-shallow shallow conversion
+# quick.shallow
+feat(opt): implement shallow - reduce history to depth 1
+test(opt): add tests for shallow history reduction
+docs(opt): document shallow shallow conversion
 
-# 21. unshallow
-feat(opt): implement 21-unshallow - restore complete history
-test(opt): add tests for 21-unshallow history restoration
-docs(opt): document 21-unshallow full recovery
+# quick.unshallow
+feat(opt): implement unshallow - restore complete history
+test(opt): add tests for unshallow history restoration
+docs(opt): document unshallow full recovery
 
-# 22. check-shallow
-feat(opt): implement 22-check-shallow - verify shallow status
-test(opt): add tests for 22-check-shallow status detection
-docs(opt): document 22-check-shallow status checking
+# advanced.check-shallow
+feat(opt): implement check-shallow - verify shallow status
+test(opt): add tests for check-shallow status detection
+docs(opt): document check-shallow status checking
 
-# 23. check-filter
-feat(opt): implement 23-check-filter - inspect filter settings
-test(opt): add tests for 23-check-filter configuration check
-docs(opt): document 23-check-filter filter inspection
+# advanced.check-filter
+feat(opt): implement check-filter - inspect filter settings
+test(opt): add tests for check-filter configuration check
+docs(opt): document check-filter filter inspection
 
-# 24. backup-config
-feat(opt): implement 24-backup-config - backup/restore settings
-test(opt): add tests for 24-backup-config save/load
-docs(opt): document 24-backup-config configuration management
+# advanced.config
+feat(opt): implement config - backup/restore settings
+test(opt): add tests for config save/load
+docs(opt): document backup-config configuration management
 ```
 
 ### Submodule 카테고리 (서브모듈)
 ```bash
-# 25. shallow-all
-feat(opt): implement 25-shallow-all - shallow all submodules
-test(opt): add tests for 25-shallow-all batch processing
-docs(opt): document 25-shallow-all submodule optimization
+# submodule.shallow
+feat(opt): implement shallow - shallow all submodules
+test(opt): add tests for shallow batch processing
+docs(opt): document shallow-all submodule optimization
 
-# 26. unshallow-all
-feat(opt): implement 26-unshallow-all - restore all submodules
-test(opt): add tests for 26-unshallow-all batch restoration
-docs(opt): document 26-unshallow-all submodule recovery
+# submodule.unshallow
+feat(opt): implement unshallow - restore all submodules
+test(opt): add tests for unshallow batch restoration
+docs(opt): document unshallow-all submodule recovery
 
-# 27. optimize-all
-feat(opt): implement 27-optimize-all - optimize all submodules
-test(opt): add tests for 27-optimize-all batch optimization
-docs(opt): document 27-optimize-all comprehensive optimization
+# submodule.status
+feat(opt): implement submodule-status - check individual submodule status
+test(opt): add tests for submodule-status status checking
+docs(opt): document submodule-status usage
 
-# 28. status-all
-feat(opt): implement 28-status-all - check all submodule status
-test(opt): add tests for 28-status-all status collection
-docs(opt): document 28-status-all status reporting
+# submodule.to-slim
+feat(opt): implement submodule-to-slim - convert submodule to SLIM
+test(opt): add tests for submodule-to-slim conversion
+docs(opt): document submodule-to-slim optimization
+
+# submodule.to-full
+feat(opt): implement submodule-to-full - restore submodule to FULL
+test(opt): add tests for submodule-to-full restoration
+docs(opt): document submodule-to-full recovery
+
+# submodule.expand-slim
+feat(opt): implement submodule-expand-slim - selective path expansion
+test(opt): add tests for submodule-expand-slim path management
+docs(opt): document submodule-expand-slim usage
+
+# submodule.expand-filter
+feat(opt): implement submodule-expand-filter - remove Partial Clone filter
+test(opt): add tests for submodule-expand-filter filter removal
+docs(opt): document submodule-expand-filter functionality
+
+# submodule.filter-branch
+feat(opt): implement submodule-filter-branch - branch filtering for submodule
+test(opt): add tests for submodule-filter-branch filter application
+docs(opt): document submodule-filter-branch usage
+
+# submodule.clear-filter
+feat(opt): implement submodule-clear-filter - clear branch filters
+test(opt): add tests for submodule-clear-filter removal
+docs(opt): document submodule-clear-filter functionality
 ```
 
 ---
@@ -996,42 +1168,42 @@ docs(opt): document 28-status-all status reporting
 ### 브랜치 네이밍 규칙
 ```bash
 # 기능 구현 브랜치
-feature/opt-<번호>-<함수명>
+feature/opt-<함수명>
 
 # 예시:
-feature/opt-03-status
-feature/opt-04-to-slim
-feature/opt-13-clone-slim
+feature/opt-status
+feature/opt-to-slim
+feature/opt-clone-slim
 ```
 
 ### 브랜치 생성 및 작업 순서
 ```bash
 # 1. 브랜치 생성
-git checkout -b feature/opt-03-status
+git checkout -b feature/opt-status
 
 # 2. 구현 작업
 # ... 코드 작성 ...
 
 # 3. 커밋 (구현)
-git add src/cmd/optimized/quick/03_status.go
-git commit -m "feat(opt): implement 03-status - repository optimization status check"
+git add src/cmd/optimized/quick/status.go
+git commit -m "feat(opt): implement status - repository optimization status check"
 
 # 4. 테스트 추가
 # ... 테스트 작성 ...
 
 # 5. 커밋 (테스트)
-git add src/cmd/optimized/quick/03_status_test.go
-git commit -m "test(opt): add tests for 03-status metrics collection"
+git add src/cmd/optimized/quick/status_test.go
+git commit -m "test(opt): add tests for status metrics collection"
 
 # 6. 문서화
 # ... 문서 작성 ...
 
 # 7. 커밋 (문서)
-git add docs/optimized/03-status.md
-git commit -m "docs(opt): document 03-status output format and usage"
+git add docs/optimized/status.md
+git commit -m "docs(opt): document status output format and usage"
 
 # 8. Push
-git push origin feature/opt-03-status
+git push origin feature/opt-status
 ```
 
 ### 릴리스 태그
@@ -1039,28 +1211,28 @@ git push origin feature/opt-03-status
 #### 태그 생성 시점
 카테고리별 모든 명령어가 완료되면 즉시 태그를 생성합니다:
 
-- **Help 카테고리** (1-2번): 2개 모두 완료 시 → `v1.0.0-opt-help`
-- **Quick 카테고리** (3-12번): 10개 모두 완료 시 → `v1.1.0-opt-quick`
-- **Setup 카테고리** (13-15번): 3개 모두 완료 시 → `v1.2.0-opt-setup`
-- **Workspace 카테고리** (16-19번): 4개 모두 완료 시 → `v1.3.0-opt-workspace`
-- **Advanced 카테고리** (20-24번): 5개 모두 완료 시 → `v1.4.0-opt-advanced`
-- **Submodule 카테고리** (25-28번): 4개 모두 완료 시 → `v1.5.0-opt-submodule`
-- **전체 완료**: 28개 모두 완료 시 → `v2.0.0-opt-complete`
+- **Help 카테고리**: 2개 모두 완료 시 → `v1.0.0-opt-help`
+- **Quick 카테고리**: 10개 모두 완료 시 → `v1.1.0-opt-quick`
+- **Setup 카테고리**: 3개 모두 완료 시 → `v1.2.0-opt-setup`
+- **Workspace 카테고리**: 4개 모두 완료 시 → `v1.3.0-opt-workspace`
+- **Advanced 카테고리**: 5개 모두 완료 시 → `v1.4.0-opt-advanced`
+- **Submodule 카테고리**: 9개 모두 완료 시 → `v1.5.0-opt-submodule`
+- **전체 완료**: 33개 모두 완료 시 → `v2.0.0-opt-complete`
 
 #### 태그 생성 명령어
 ```bash
 # 카테고리 완료 시 태그 생성
-git tag -a v1.0.0-opt-help -m "Complete Help category implementation (1-2)"
+git tag -a v1.0.0-opt-help -m "Complete Help category implementation"
 git push origin v1.0.0-opt-help
 
 # 마일스톤별 태그 목록
-v1.0.0-opt-help      # Help 카테고리 완료 (1-2번)
-v1.1.0-opt-quick     # Quick 카테고리 완료 (3-12번)
-v1.2.0-opt-setup     # Setup 카테고리 완료 (13-15번)
-v1.3.0-opt-workspace # Workspace 카테고리 완료 (16-19번)
-v1.4.0-opt-advanced  # Advanced 카테고리 완료 (20-24번)
-v1.5.0-opt-submodule # Submodule 카테고리 완료 (25-28번)
-v2.0.0-opt-complete  # 전체 최적화 기능 완료 (1-28번)
+v1.0.0-opt-help      # Help 카테고리 완료
+v1.1.0-opt-quick     # Quick 카테고리 완료
+v1.2.0-opt-setup     # Setup 카테고리 완료
+v1.3.0-opt-workspace # Workspace 카테고리 완료
+v1.4.0-opt-advanced  # Advanced 카테고리 완료
+v1.5.0-opt-submodule # Submodule 카테고리 완료
+v2.0.0-opt-complete  # 전체 최적화 기능 완료
 ```
 
 ---
@@ -1072,7 +1244,7 @@ v2.0.0-opt-complete  # 전체 최적화 기능 완료 (1-28번)
 
 1. **진행 상황 업데이트** (상단 제목)
    ```markdown
-   ## 🎯 구현 진행 상황 (1/28)  # 숫자 업데이트
+   ## 🎯 구현 진행 상황 (1/33)  # 숫자 업데이트
    ```
 
 2. **체크박스 업데이트** 
@@ -1082,24 +1254,24 @@ v2.0.0-opt-complete  # 전체 최적화 기능 완료 (1-28번)
 
 3. **구현 상태 표시** (함수별 구현 상세 섹션)
    ```markdown
-   ### 01. workflow (`src/cmd/optimized/help/01_workflow.go`)
+   ### help.workflow (`src/cmd/optimized/help/workflow.go`)
    **상태**: ✅ 구현 완료 (2025-01-XX)  # 날짜 추가
    ```
 
 ### 업데이트 예시
 ```bash
 # 구현 전
-- [ ] 01. workflow - Git 최적화 워크플로우 가이드
+- [ ] workflow - Git 최적화 워크플로우 가이드
 
 # 구현 후  
-- [x] 01. workflow - Git 최적화 워크플로우 가이드
+- [x] workflow - Git 최적화 워크플로우 가이드
 ```
 
 ### 체크리스트 업데이트 커밋
 ```bash
-docs(opt): update checklist for 01-workflow completion
+docs(opt): update checklist for workflow completion
 
-- Mark 01-workflow as completed
+- Mark workflow as completed
 - Update progress count (1/28)
 - Add completion date
 ```
@@ -1113,35 +1285,35 @@ docs(opt): update checklist for 01-workflow completion
 
 ```bash
 # 함수 구현 완료 시 체크리스트 업데이트
-docs(opt): update checklist for <번호>-<함수명> completion
+docs(opt): update checklist for <함수명> completion
 
-- <번호>-<함수명> 완료 표시
-- 진행 상황 업데이트 (<현재/28>)
+- <함수명> 완료 표시
+- 진행 상황 업데이트 (<현재/33>)
 - 완료 날짜 추가
 
 # 예시:
-docs(opt): update checklist for 03-status completion
+docs(opt): update checklist for status completion
 
-- 03-status 완료 표시
-- 진행 상황 업데이트 (3/28)
+- status 완료 표시
+- 진행 상황 업데이트 (3/33)
 - 완료 날짜 추가 (2025-08-26)
 
 # 여러 함수 동시 완료 시
 docs(opt): update checklist for multiple completions
 
-- 03-status, 04-to-slim 완료 표시
-- 진행 상황 업데이트 (4/28)
+- status, to-slim 완료 표시
+- 진행 상황 업데이트 (4/33)
 - 완료 날짜들 추가
 
 # 카테고리 완료 시
 docs(opt): complete Help category implementation
 
-- Help 카테고리 전체 명령어 완료 표시 (1-2번)
-- 진행 상황 업데이트 (2/28)
+- Help 카테고리 전체 명령어 완료 표시
+- 진행 상황 업데이트 (2/33)
 - 마일스톤 달성 기록
 
 # 부분 구현 또는 진행 중 상태 업데이트
-docs(opt): update 03-status implementation progress
+docs(opt): update status implementation progress
 
 - 부분 구현 내용 추가
 - 남은 작업 TODO 업데이트

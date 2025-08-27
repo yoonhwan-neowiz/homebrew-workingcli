@@ -36,8 +36,8 @@ func NewOptimizedCmd() *cobra.Command {
 		Short: "도움말 및 가이드",
 	}
 	helpCmd.AddCommand(
-		help.NewWorkflowCmd(),    // 1. Workflow
-		help.NewCommandsCmd(),     // 2. Commands
+		help.NewWorkflowCmd(),    // Workflow
+		help.NewCommandsCmd(),     // Commands
 	)
 	
 	// Quick 카테고리
@@ -46,16 +46,16 @@ func NewOptimizedCmd() *cobra.Command {
 		Short: "자주 사용하는 최적화 기능",
 	}
 	quickCmd.AddCommand(
-		quick.NewStatusCmd(),       // 3. Status
-		quick.NewToSlimCmd(),        // 4. To SLIM
-		quick.NewToFullCmd(),        // 5. To FULL
-		quick.NewExpandSlimCmd(),    // 6. Expand SLIM
-		quick.NewExpandFilterCmd(),  // 7. Expand Filter
-		quick.NewExpand10Cmd(),      // 8. Expand 10
-		quick.NewExpand50Cmd(),      // 9. Expand 50
-		quick.NewExpand100Cmd(),     // 10. Expand 100
-		quick.NewAutoFindMergeBaseCmd(),  // 11. Auto Find Merge Base
-		quick.NewCheckMergeBaseCmd(),     // 12. Check Merge Base
+		quick.NewStatusCmd(),       // Status
+		quick.NewToSlimCmd(),        // To SLIM
+		quick.NewToFullCmd(),        // To FULL
+		quick.NewExpandSlimCmd(),    // Expand SLIM
+		quick.NewExpandFilterCmd(),  // Expand Filter
+		quick.NewAutoFindMergeBaseCmd(),  // Auto Find Merge Base
+		quick.NewFilterBranchCmd(),    // Filter Branch
+		quick.NewClearFilterBranchCmd(),  // Clear Filter Branch
+		quick.NewShallowCmd(),          // Shallow
+		quick.NewUnshallowCmd(),        // Unshallow
 	)
 	
 	// Setup 카테고리
@@ -64,9 +64,9 @@ func NewOptimizedCmd() *cobra.Command {
 		Short: "초기 설정 및 마이그레이션",
 	}
 	setupCmd.AddCommand(
-		setup.NewCloneSlimCmd(),    // 13. Clone SLIM
-		setup.NewMigrateCmd(),       // 14. Migrate
-		setup.NewPerformanceCmd(),   // 15. Performance
+		setup.NewCloneSlimCmd(),    // Clone SLIM
+		setup.NewMigrateCmd(),       // Migrate
+		setup.NewPerformanceCmd(),   // Performance
 	)
 	
 	// Workspace 카테고리
@@ -75,10 +75,8 @@ func NewOptimizedCmd() *cobra.Command {
 		Short: "작업 공간 관리",
 	}
 	workspaceCmd.AddCommand(
-		workspace.NewExpandPathCmd(),      // 16. Expand Path
-		workspace.NewFilterBranchCmd(),    // 17. Filter Branch
-		workspace.NewClearFilterBranchCmd(),     // 18. Clear Filter Branch
-		workspace.NewRestoreBranchCmd(),   // 19. Restore Branch
+		workspace.NewExpandPathCmd(),      // Expand Path
+		workspace.NewRestoreBranchCmd(),   // Restore Branch
 	)
 	
 	// Advanced 카테고리
@@ -87,11 +85,13 @@ func NewOptimizedCmd() *cobra.Command {
 		Short: "고급 최적화 기능",
 	}
 	advancedCmd.AddCommand(
-		advanced.NewShallowCmd(),          // 20. Shallow
-		advanced.NewUnshallowCmd(),        // 21. Unshallow
-		advanced.NewCheckShallowCmd(),     // 22. Check Shallow
-		advanced.NewCheckFilterCmd(),      // 23. Check Filter
-		advanced.NewConfigCmd(),            // 24. Config
+		advanced.NewExpand10Cmd(),      // Expand 10
+		advanced.NewExpand50Cmd(),      // Expand 50
+		advanced.NewExpand100Cmd(),     // Expand 100
+		advanced.NewCheckMergeBaseCmd(),     // Check Merge Base
+		advanced.NewCheckShallowCmd(),     // Check Shallow
+		advanced.NewCheckFilterCmd(),      // Check Filter
+		advanced.NewConfigCmd(),            // Config
 	)
 	
 	// Submodule 카테고리
@@ -100,10 +100,20 @@ func NewOptimizedCmd() *cobra.Command {
 		Short: "서브모듈 최적화",
 	}
 	submoduleCmd.AddCommand(
-		submodule.NewShallowAllCmd(),      // 25. Shallow All
-		submodule.NewUnshallowAllCmd(),    // 26. Unshallow All
-		submodule.NewOptimizeAllCmd(),     // 27. Optimize All
-		submodule.NewStatusAllCmd(),       // 28. Status All
+		// 개별 서브모듈 제어 (미구현)
+		// submodule.NewStatusCmd(),        // Status (submodule)
+		// submodule.NewToSlimCmd(),        // To-Slim (submodule)
+		// submodule.NewToFullCmd(),        // To-Full (submodule)
+		// submodule.NewExpandSlimCmd(),    // Expand-Slim (submodule)
+		// submodule.NewExpandFilterCmd(),  // Expand-Filter (submodule)
+		
+		// 전체 서브모듈 제어
+		submodule.NewShallowCmd(),         // Shallow (recursive)
+		submodule.NewUnshallowCmd(),       // Unshallow (recursive)
+		
+		// 브랜치 필터 (미구현)
+		// submodule.NewFilterBranchCmd(),  // Filter-Branch (submodule)
+		// submodule.NewClearFilterCmd(),   // Clear-Filter (submodule)
 	)
 	
 	cmd.AddCommand(helpCmd, quickCmd, setupCmd, workspaceCmd, advancedCmd, submoduleCmd)
