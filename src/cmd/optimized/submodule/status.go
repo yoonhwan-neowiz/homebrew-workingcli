@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"workingcli/src/utils"
 	
 	"github.com/spf13/cobra"
+	"workingcli/src/config"
+	"workingcli/src/utils"
 )
 
 // NewStatusCmd creates the submodule status command
@@ -315,6 +316,31 @@ func printSubmoduleStatusReport(statuses []SubmoduleStatus) {
 		fmt.Println("\n💡 권장사항:")
 		fmt.Println("• 모든 서브모듈 최적화: ga opt submodule to-slim")
 		fmt.Println("• 특정 서브모듈 최적화: cd <서브모듈경로> && ga opt quick to-slim")
+	}
+	
+	// Show current config settings
+	fmt.Println("\n⚙️  현재 설정 (config):")
+	
+	// Get submodule filter config
+	submoduleFilter := config.GetString("optimize.submodule.filter.default")
+	if submoduleFilter == "" {
+		submoduleFilter = config.GetString("optimize.filter.default")
+		if submoduleFilter == "" {
+			submoduleFilter = "1m"
+		}
+	}
+	fmt.Printf("• 기본 필터: blob:limit=%s\n", submoduleFilter)
+	
+	// Get sparse paths config
+	settings := config.GetAll()
+	if optimize, ok := settings["optimize"].(map[string]interface{}); ok {
+		if submodule, ok := optimize["submodule"].(map[string]interface{}); ok {
+			if sparse, ok := submodule["sparse"].(map[string]interface{}); ok {
+				if paths, ok := sparse["paths"].([]interface{}); ok && len(paths) > 0 {
+					fmt.Printf("• Sparse 경로: %d개 설정됨\n", len(paths))
+				}
+			}
+		}
 	}
 }
 

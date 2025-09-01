@@ -108,6 +108,39 @@ API 키 설정, 프롬프트 경로 설정 등을 수행할 수 있습니다.`,
 							}
 						}
 					}
+					
+					// 서브모듈 설정
+					if submodule, ok := optimize["submodule"].(map[string]interface{}); ok {
+						fmt.Println("\n[서브모듈 최적화 설정]")
+						if mode, exists := submodule["mode"].(string); exists {
+							fmt.Printf("optimize.submodule.mode = %s\n", mode)
+						}
+						
+						if filter, ok := submodule["filter"].(map[string]interface{}); ok {
+							if defaultFilter, exists := filter["default"].(string); exists {
+								fmt.Printf("optimize.submodule.filter.default = %s\n", defaultFilter)
+							}
+							if options, ok := filter["options"].(map[string]interface{}); ok {
+								fmt.Println("optimize.submodule.filter.options:")
+								for key, value := range options {
+									fmt.Printf("  - %s: %v\n", key, value)
+								}
+							}
+						}
+						
+						if sparse, ok := submodule["sparse"].(map[string]interface{}); ok {
+							if paths, ok := sparse["paths"].([]interface{}); ok {
+								if len(paths) > 0 {
+									fmt.Println("optimize.submodule.sparse.paths:")
+									for _, path := range paths {
+										fmt.Printf("  - %v\n", path)
+									}
+								} else {
+									fmt.Println("optimize.submodule.sparse.paths = []")
+								}
+							}
+						}
+					}
 				}
 
 				return nil

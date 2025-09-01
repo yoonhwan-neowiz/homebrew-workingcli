@@ -35,6 +35,16 @@ type Config struct {
 		Sparse struct {
 			Paths []string `mapstructure:"paths"` // Sparse Checkout 경로들
 		} `mapstructure:"sparse"`
+		Submodule struct {
+			Mode   string `mapstructure:"mode"` // slim 또는 full
+			Filter struct {
+				Default string            `mapstructure:"default"` // 서브모듈 기본 필터
+				Options map[string]string `mapstructure:"options"` // 서브모듈 필터 옵션들
+			} `mapstructure:"filter"`
+			Sparse struct {
+				Paths []string `mapstructure:"paths"` // 서브모듈 Sparse Checkout 경로들
+			} `mapstructure:"sparse"`
+		} `mapstructure:"submodule"`
 	} `mapstructure:"optimize"`
 }
 

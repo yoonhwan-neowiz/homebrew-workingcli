@@ -178,6 +178,50 @@ func performBackup() {
 		infoStyle.Println("완료")
 	}
 	
+	// 3-1. 서브모듈 설정 백업
+	fmt.Print("📦 서브모듈 설정 백업 중... ")
+	submoduleBackup := filepath.Join(timestampDir, "submodule-settings.txt")
+	
+	var submoduleLines []string
+	// config에서 서브모듈 설정 읽기
+	settings := config.GetAll()
+	if optimize, ok := settings["optimize"].(map[string]interface{}); ok {
+		if submodule, ok := optimize["submodule"].(map[string]interface{}); ok {
+			if mode, ok := submodule["mode"].(string); ok {
+				submoduleLines = append(submoduleLines, fmt.Sprintf("mode=%s", mode))
+			}
+			if filter, ok := submodule["filter"].(map[string]interface{}); ok {
+				if defaultFilter, ok := filter["default"].(string); ok {
+					submoduleLines = append(submoduleLines, fmt.Sprintf("filter.default=%s", defaultFilter))
+				}
+			}
+			if sparse, ok := submodule["sparse"].(map[string]interface{}); ok {
+				if paths, ok := sparse["paths"].([]interface{}); ok && len(paths) > 0 {
+					var pathStrs []string
+					for _, p := range paths {
+						if ps, ok := p.(string); ok {
+							pathStrs = append(pathStrs, ps)
+						}
+					}
+					submoduleLines = append(submoduleLines, fmt.Sprintf("sparse.paths=%s", strings.Join(pathStrs, ",")))
+				} else {
+					submoduleLines = append(submoduleLines, "sparse.paths=")
+				}
+			}
+		}
+	}
+	
+	if len(submoduleLines) > 0 {
+		content := strings.Join(submoduleLines, "\n")
+		if err := os.WriteFile(submoduleBackup, []byte(content), 0644); err != nil {
+			warningStyle.Println("저장 실패")
+		} else {
+			infoStyle.Println("완료")
+		}
+	} else {
+		infoStyle.Println("건너뜀 (설정 없음)")
+	}
+	
 	// 4. 백업 요약
 	fmt.Println("\n✅ 백업 완료!")
 	fmt.Printf("   ├─ 위치: %s\n", boldStyle.Sprint(backupDir))
@@ -324,6 +368,39 @@ func performRestore() {
 				case "branch-filter":
 					// 브랜치 필터는 config.yaml에 저장됨
 					fmt.Printf("\n   └─ 브랜치 필터 복원은 config.yaml을 통해 처리됨\n")
+				}
+			}
+		}
+		infoStyle.Println("완료")
+	}
+	
+	// 3-1. 서브모듈 설정 복원 (있다면 config에 반영)
+	submoduleBackup := filepath.Join(backupTimestampDir, "submodule-settings.txt")
+	if data, err := os.ReadFile(submoduleBackup); err == nil {
+		fmt.Print("📦 서브모듈 설정 복원 중... ")
+		
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := parts[0]
+				value := parts[1]
+				
+				switch key {
+				case "mode":
+					config.Set("optimize.submodule.mode", value)
+				case "filter.default":
+					config.Set("optimize.submodule.filter.default", value)
+				case "sparse.paths":
+					if value != "" {
+						paths := strings.Split(value, ",")
+						config.Set("optimize.submodule.sparse.paths", paths)
+					}
 				}
 			}
 		}
