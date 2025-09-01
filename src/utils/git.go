@@ -118,6 +118,89 @@ func GetDiskUsage() map[string]string {
 	return usage
 }
 
+// GetGitDirSize returns the size of a .git directory (bytes and human string)
+// This function handles both regular .git directories and gitfile references
+func GetGitDirSize(basePath string) (int64, string) {
+	gitPath := filepath.Join(basePath, ".git")
+	
+	// .git이 gitfile인 경우 실제 경로 읽기
+	if info, err := os.Stat(gitPath); err == nil && !info.IsDir() {
+		if content, err := os.ReadFile(gitPath); err == nil {
+			gitDir := strings.TrimPrefix(string(content), "gitdir: ")
+			gitDir = strings.TrimSpace(gitDir)
+			if !filepath.IsAbs(gitDir) {
+				// 상대 경로는 basePath를 기준으로 해석
+				gitDir = filepath.Join(basePath, gitDir)
+			}
+			gitPath = gitDir
+		}
+	}
+	
+	// du -sh로 사람이 읽기 쉬운 크기 확보
+	human := "N/A"
+	if output, err := exec.Command("du", "-sh", gitPath).Output(); err == nil {
+		fields := strings.Fields(string(output))
+		if len(fields) > 0 {
+			human = fields[0]
+		}
+	}
+	
+	// 사람이 읽는 단위를 바이트로 근사 변환
+	bytes := ParseHumanSize(human)
+	
+	return bytes, human
+}
+
+// GetSubmoduleGitSize returns the size of a submodule's .git directory
+// It changes to the submodule directory, gets the size, and returns to original directory
+func GetSubmoduleGitSize(submodulePath string) (int64, string) {
+	// 현재 디렉토리 저장
+	originalDir, err := os.Getwd()
+	if err != nil {
+		return 0, "N/A"
+	}
+	
+	// 서브모듈 디렉토리로 이동
+	if err := os.Chdir(submodulePath); err != nil {
+		return 0, "N/A"
+	}
+	defer os.Chdir(originalDir) // 원래 디렉토리로 복귀
+	
+	// 현재 디렉토리(".")를 기준으로 크기 측정
+	return GetGitDirSize(".")
+}
+
+// ParseHumanSize converts human-readable size string to bytes
+func ParseHumanSize(sizeStr string) int64 {
+	if sizeStr == "N/A" || sizeStr == "" {
+		return 0
+	}
+	
+	var multiplier int64 = 1
+	
+	// 단위 확인 및 제거
+	if strings.HasSuffix(sizeStr, "K") {
+		multiplier = 1024
+		sizeStr = strings.TrimSuffix(sizeStr, "K")
+	} else if strings.HasSuffix(sizeStr, "M") {
+		multiplier = 1024 * 1024
+		sizeStr = strings.TrimSuffix(sizeStr, "M")
+	} else if strings.HasSuffix(sizeStr, "G") {
+		multiplier = 1024 * 1024 * 1024
+		sizeStr = strings.TrimSuffix(sizeStr, "G")
+	} else if strings.HasSuffix(sizeStr, "T") {
+		multiplier = 1024 * 1024 * 1024 * 1024
+		sizeStr = strings.TrimSuffix(sizeStr, "T")
+	}
+	
+	// 숫자 파싱
+	if val, err := strconv.ParseFloat(sizeStr, 64); err == nil {
+		return int64(val * float64(multiplier))
+	}
+	
+	return 0
+}
+
 // GetObjectInfo returns git object statistics
 func GetObjectInfo() map[string]interface{} {
 	info := make(map[string]interface{})

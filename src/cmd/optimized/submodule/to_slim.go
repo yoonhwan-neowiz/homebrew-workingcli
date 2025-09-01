@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -110,7 +108,7 @@ func runToSlim() {
 		}
 
 		// 현재 .git 디렉토리 크기 측정
-		beforeBytes, beforeHuman := getGitDirSize()
+		beforeBytes, beforeHuman := utils.GetGitDirSize(".")
 
 		// 1) Partial Clone 필터 설정 (config에서 읽은 값 사용)
 		exec.Command("git", "config", "remote.origin.partialclonefilter", submoduleFilter).Run()
@@ -153,7 +151,7 @@ func runToSlim() {
 		exec.Command("git", "maintenance", "run", "--task=gc").Run()
 
 		// 전환 후 크기 측정
-		afterBytes, afterHuman := getGitDirSize()
+		afterBytes, afterHuman := utils.GetGitDirSize(".")
 
 		// 결과 기록
 		mu.Lock()
@@ -235,53 +233,4 @@ func getSubmoduleSparsePaths() []string {
 	}
 	
 	return paths
-}
-
-// getGitDirSize returns the size of the .git directory (bytes and human string)
-func getGitDirSize() (int64, string) {
-	gitPath := ".git"
-	// .git 이 gitfile 인 경우 실제 경로 읽기
-	if info, err := os.Stat(gitPath); err == nil && !info.IsDir() {
-		if content, err := os.ReadFile(gitPath); err == nil {
-			gitDir := strings.TrimPrefix(string(content), "gitdir: ")
-			gitDir = strings.TrimSpace(gitDir)
-			if !filepath.IsAbs(gitDir) {
-				// 상대 경로는 현재 레포 루트를 기준으로 해석
-				cwd, _ := os.Getwd()
-				gitDir = filepath.Join(cwd, gitDir)
-			}
-			gitPath = gitDir
-		}
-	}
-
-	// du -sh 로 사람 친화적 사이즈 확보
-	human := "N/A"
-	if output, err := exec.Command("du", "-sh", gitPath).Output(); err == nil {
-		fields := strings.Fields(string(output))
-		if len(fields) > 0 {
-			human = fields[0]
-		}
-	}
-
-	// 사람이 읽는 단위를 바이트로 근사 변환 (상태 명령과 동일한 로직)
-	var bytes int64
-	sizeStr := human
-	if sizeStr != "N/A" {
-		multiplier := int64(1)
-		if strings.HasSuffix(sizeStr, "K") {
-			multiplier = 1024
-			sizeStr = strings.TrimSuffix(sizeStr, "K")
-		} else if strings.HasSuffix(sizeStr, "M") {
-			multiplier = 1024 * 1024
-			sizeStr = strings.TrimSuffix(sizeStr, "M")
-		} else if strings.HasSuffix(sizeStr, "G") {
-			multiplier = 1024 * 1024 * 1024
-			sizeStr = strings.TrimSuffix(sizeStr, "G")
-		}
-		if f, err := strconv.ParseFloat(sizeStr, 64); err == nil {
-			bytes = int64(f * float64(multiplier))
-		}
-	}
-
-	return bytes, human
 }

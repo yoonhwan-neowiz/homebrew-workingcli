@@ -158,42 +158,9 @@ func getSubmoduleStatusInfo(submodulePath string) SubmoduleStatus {
 	}
 	
 	// Get .git folder size
-	gitPath := ".git"
-	if info, err := os.Stat(gitPath); err == nil && !info.IsDir() {
-		// It's a gitfile, read actual path
-		if content, err := os.ReadFile(gitPath); err == nil {
-			gitDir := strings.TrimPrefix(string(content), "gitdir: ")
-			gitDir = strings.TrimSpace(gitDir)
-			if !filepath.IsAbs(gitDir) {
-				gitDir = filepath.Join(originalDir, gitDir)
-			}
-			gitPath = gitDir
-		}
-	}
-	
-	cmd := exec.Command("du", "-sh", gitPath)
-	if output, err := cmd.Output(); err == nil {
-		fields := strings.Fields(string(output))
-		if len(fields) > 0 {
-			status.Size = fields[0]
-			// Parse size for bytes (rough estimation)
-			sizeStr := fields[0]
-			multiplier := int64(1)
-			if strings.HasSuffix(sizeStr, "K") {
-				multiplier = 1024
-				sizeStr = strings.TrimSuffix(sizeStr, "K")
-			} else if strings.HasSuffix(sizeStr, "M") {
-				multiplier = 1024 * 1024
-				sizeStr = strings.TrimSuffix(sizeStr, "M")
-			} else if strings.HasSuffix(sizeStr, "G") {
-				multiplier = 1024 * 1024 * 1024
-				sizeStr = strings.TrimSuffix(sizeStr, "G")
-			}
-			if val, err := strconv.ParseFloat(sizeStr, 64); err == nil {
-				status.SizeBytes = int64(val * float64(multiplier))
-			}
-		}
-	}
+	bytes, human := utils.GetGitDirSize(".")
+	status.Size = human
+	status.SizeBytes = bytes
 	
 	// Check Partial Clone filter
 	status.PartialFilter = utils.GetPartialCloneFilter()
@@ -217,7 +184,7 @@ func getSubmoduleStatusInfo(submodulePath string) SubmoduleStatus {
 	}
 	
 	// Get commit count
-	cmd = exec.Command("git", "rev-list", "--count", "HEAD")
+	cmd := exec.Command("git", "rev-list", "--count", "HEAD")
 	if output, err := cmd.Output(); err == nil {
 		if count, err := strconv.Atoi(strings.TrimSpace(string(output))); err == nil {
 			status.CommitCount = count
