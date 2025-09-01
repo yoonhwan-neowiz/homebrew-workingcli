@@ -106,15 +106,15 @@ func NewOptimizedCmd() *cobra.Command {
 		submodule.NewToSlimCmd(),         // To-Slim (submodule)
 		submodule.NewToFullCmd(),         // To-Full (submodule)
 		submodule.NewExpandSlimCmd(),    // Expand-Slim (submodule)
-		// submodule.NewExpandFilterCmd(),  // Expand-Filter (submodule)
+		submodule.NewExpandFilterCmd(),   // Expand-Filter (submodule)
 		
 		// 전체 서브모듈 제어
 		submodule.NewShallowCmd(),         // Shallow (recursive)
 		submodule.NewUnshallowCmd(),       // Unshallow (recursive)
 		
-		// 브랜치 필터 (미구현)
-		// submodule.NewFilterBranchCmd(),  // Filter-Branch (submodule)
-		// submodule.NewClearFilterCmd(),   // Clear-Filter (submodule)
+		// 브랜치 필터
+		submodule.NewFilterBranchCmd(),    // Filter-Branch (submodule)
+		submodule.NewClearFilterBranchCmd(), // Clear-Filter-Branch (submodule)
 	)
 	
 	cmd.AddCommand(helpCmd, quickCmd, setupCmd, workspaceCmd, advancedCmd, submoduleCmd)

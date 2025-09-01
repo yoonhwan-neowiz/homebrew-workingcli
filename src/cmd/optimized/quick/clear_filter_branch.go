@@ -13,7 +13,7 @@ import (
 // NewClearFilterBranchCmd creates the Clear Filter Branch command
 func NewClearFilterBranchCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "clear-filter",
+		Use:   "clear-filter-branch",
 		Short: "브랜치 필터 제거 (모든 브랜치 표시)",
 		Long: `브랜치 필터를 제거하여 모든 로컬/원격 브랜치가 표시되도록 합니다.
 filter-branch로 설정한 필터를 초기화합니다.`,
