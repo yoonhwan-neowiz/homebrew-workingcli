@@ -105,7 +105,7 @@ func NewOptimizedCmd() *cobra.Command {
 		submodule.NewStatusCmd(),        // Status (submodule)
 		submodule.NewToSlimCmd(),         // To-Slim (submodule)
 		submodule.NewToFullCmd(),         // To-Full (submodule)
-		// submodule.NewExpandSlimCmd(),    // Expand-Slim (submodule)
+		submodule.NewExpandSlimCmd(),    // Expand-Slim (submodule)
 		// submodule.NewExpandFilterCmd(),  // Expand-Filter (submodule)
 		
 		// 전체 서브모듈 제어

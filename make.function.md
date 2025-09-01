@@ -1,6 +1,6 @@
 # Git 저장소 최적화 명령어 구현 가이드
 
-## 📊 구현 진행률: 29/40 (72.5%)
+## 📊 구현 진행률: 32/40 (80%)
 
 ## 🎯 핵심 구현 전략 - AI 협업 워크플로우
 
@@ -162,7 +162,7 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 - [x] submodule.status - 서브모듈별 최적화 상태 확인
 - [x] submodule.to-slim - 서브모듈을 SLIM 모드로 전환
 - [x] submodule.to-full - 서브모듈을 FULL 모드로 복원
-- [ ] submodule.expand-slim - 서브모듈 선택적 경로 확장
+- [x] submodule.expand-slim - 서브모듈 선택적 경로 확장
 - [ ] submodule.expand-filter - 서브모듈 Partial Clone 필터 제거
 - [x] submodule.shallow - 서브모듈 shallow 변환 (recursive)
 - [x] submodule.unshallow - 서브모듈 히스토리 복원 (recursive)
@@ -215,8 +215,8 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 |--------------------|-----------------|------------------------|---------|
 | `status.go`        | `status`        | 서브모듈 상태 확인             | ✅ 구현 완료 |
 | `to_slim.go`       | `to-slim`       | SLIM 모드 전환             | ✅ 구현 완료 |
-| `to_full.go`       | `to-full`       | FULL 모드 복원             | ⏳ 대기    |
-| `expand_slim.go`   | `expand-slim`   | 경로 확장                  | ⏳ 대기    |
+| `to_full.go`       | `to-full`       | FULL 모드 복원             | ✅ 구현 완료 |
+| `expand_slim.go`   | `expand-slim`   | 경로 확장                  | ✅ 구현 완료 |
 | `expand_filter.go` | `expand-filter` | 필터 제거                  | ⏳ 대기    |
 | `shallow.go`       | `shallow`       | shallow 변환 (recursive) | ✅ 구현 완료 |
 | `unshallow.go`     | `unshallow`     | 히스토리 복원 (recursive)    | ✅ 구현 완료 |

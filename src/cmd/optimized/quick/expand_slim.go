@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	
+	"workingcli/src/config"
 	"workingcli/src/utils"
 	"github.com/spf13/cobra"
 )
@@ -28,12 +29,6 @@ Sparse Checkout 목록에 경로를 추가하고 Partial Clone 필터를 우회�
 func runExpandSlim() {
 	fmt.Println("\n🔸 SLIM 선택적 확장")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-	// Git 저장소 확인
-	if !utils.IsGitRepository() {
-		fmt.Println("❌ 오류: Git 저장소가 아닙니다.")
-		os.Exit(1)
-	}
 
 	// 현재 상태 확인
 	mode := utils.GetOptimizationMode()
@@ -141,6 +136,13 @@ func runExpandSlim() {
 	}
 
 	if successCount > 0 {
+		// Config에 경로 저장
+		if err := savePathsToConfig(paths); err != nil {
+			fmt.Printf("⚠️  경고: Config 저장 실패: %v\n", err)
+		} else {
+			fmt.Println("\n💾 추가된 경로를 Config에 저장했습니다.")
+		}
+
 		// 필요한 객체 다운로드
 		fmt.Println("\n🔄 필요한 파일 다운로드 중...")
 		cmd := exec.Command("git", "read-tree", "-m", "-u", "HEAD")
@@ -208,4 +210,41 @@ func runExpandSlim() {
 		fmt.Println("\n⚠️  경로 추가에 모두 실패했습니다.")
 		fmt.Println("   경로 형식을 확인하고 다시 시도하세요.")
 	}
+}
+
+// savePathsToConfig saves the expanded paths to config file
+func savePathsToConfig(newPaths []string) error {
+	// 현재 config의 sparse paths 가져오기
+	settings := config.GetAll()
+	var existingPaths []string
+	
+	if optimize, ok := settings["optimize"].(map[string]interface{}); ok {
+		if sparse, ok := optimize["sparse"].(map[string]interface{}); ok {
+			if paths, ok := sparse["paths"].([]interface{}); ok {
+				for _, path := range paths {
+					if p, ok := path.(string); ok {
+						existingPaths = append(existingPaths, p)
+					}
+				}
+			}
+		}
+	}
+	
+	// 중복 제거하며 새 경로 추가
+	pathMap := make(map[string]bool)
+	for _, p := range existingPaths {
+		pathMap[p] = true
+	}
+	for _, p := range newPaths {
+		pathMap[p] = true
+	}
+	
+	// 맵을 슬라이스로 변환
+	var allPaths []string
+	for path := range pathMap {
+		allPaths = append(allPaths, path)
+	}
+	
+	// Config에 저장
+	return config.Set("optimize.sparse.paths", allPaths)
 }
