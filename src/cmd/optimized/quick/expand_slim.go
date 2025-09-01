@@ -95,15 +95,22 @@ func runExpandSlim() {
 	// Sparse Checkout이 비활성화된 경우 활성화
 	if !sparseInfo["enabled"].(bool) {
 		fmt.Println("\n🔧 Sparse Checkout 활성화 중...")
-		cmd := exec.Command("git", "sparse-checkout", "init", "--cone")
-		if output, err := cmd.CombinedOutput(); err != nil {
+		if err := utils.InitSparseCheckoutWithMode(paths); err != nil {
 			fmt.Printf("❌ 오류: Sparse Checkout 활성화 실패: %v\n", err)
-			if len(output) > 0 {
-				fmt.Printf("   상세: %s\n", string(output))
-			}
 			os.Exit(1)
 		}
 		fmt.Println("✅ Sparse Checkout 활성화 완료")
+	} else {
+		// 이미 활성화된 경우에도 모드 확인
+		existingPaths := []string{}
+		if pathsInterface, ok := sparseInfo["paths"].([]string); ok {
+			existingPaths = pathsInterface
+		}
+		
+		// non-cone 모드 전환 필요 여부 확인
+		if err := utils.EnsureNonConeMode(paths, existingPaths); err != nil {
+			fmt.Printf("⚠️ 모드 전환 중 경고: %v\n", err)
+		}
 	}
 
 	// 경로 추가

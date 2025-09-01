@@ -142,20 +142,12 @@ func runExpandSlim() {
 
 		// Sparse Checkout 상태 확인 및 활성화
 		if !utils.IsSparseCheckoutEnabled() {
-			// cone 모드 여부 결정 (파일이 포함되어 있으면 non-cone)
-			hasFiles := false
-			for _, path := range paths {
-				if !strings.HasSuffix(path, "/") && strings.Contains(path, ".") {
-					hasFiles = true
-					break
-				}
-			}
-
-			if hasFiles {
-				exec.Command("git", "sparse-checkout", "init", "--no-cone").Run()
-			} else {
-				exec.Command("git", "sparse-checkout", "init", "--cone").Run()
-			}
+			// 적절한 모드로 초기화
+			utils.InitSparseCheckoutWithMode(paths)
+		} else {
+			// 이미 활성화된 경우에도 필요시 non-cone 모드로 전환
+			existingPaths := utils.GetCurrentSparsePaths()
+			utils.EnsureNonConeMode(paths, existingPaths)
 		}
 
 		// 경로 추가

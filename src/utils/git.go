@@ -846,6 +846,52 @@ func Contains(slice []string, item string) bool {
 	return false
 }
 
+// IsFilePath checks if a path represents a file (not a directory)
+func IsFilePath(path string) bool {
+	return !strings.HasSuffix(path, "/") && strings.Contains(path, ".")
+}
+
+// HasFilePaths checks if any path in the list is a file path
+func HasFilePaths(paths []string) bool {
+	for _, path := range paths {
+		if IsFilePath(path) {
+			return true
+		}
+	}
+	return false
+}
+
+// InitSparseCheckoutWithMode initializes sparse checkout with appropriate mode
+func InitSparseCheckoutWithMode(paths []string) error {
+	// Check if any path is a file
+	hasFiles := HasFilePaths(paths)
+	
+	var cmd *exec.Command
+	if hasFiles {
+		// Use non-cone mode for file paths
+		cmd = exec.Command("git", "sparse-checkout", "init", "--no-cone")
+	} else {
+		// Use cone mode for directories only
+		cmd = exec.Command("git", "sparse-checkout", "init", "--cone")
+	}
+	
+	return cmd.Run()
+}
+
+// EnsureNonConeMode ensures sparse checkout is in non-cone mode if needed
+func EnsureNonConeMode(newPaths []string, existingPaths []string) error {
+	// Check if we need non-cone mode
+	needsNonCone := HasFilePaths(newPaths) || HasFilePaths(existingPaths)
+	currentConeMode := CheckConeMode()
+	
+	if needsNonCone && currentConeMode {
+		// Switch to non-cone mode
+		return RunGitCommand("sparse-checkout", "init", "--no-cone")
+	}
+	
+	return nil
+}
+
 // SubmoduleOperation은 각 서브모듈에서 실행할 작업을 정의
 type SubmoduleOperation func(path string) error
 

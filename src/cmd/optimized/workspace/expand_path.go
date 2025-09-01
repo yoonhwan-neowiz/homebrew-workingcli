@@ -63,31 +63,25 @@ func runExpandPath(cmd *cobra.Command, args []string) {
 		}
 	}
 	
-	// 3. 파일/폴더 여부 확인 및 기존 경로에서 파일 존재 여부 확인
-	isNewPathFile := !strings.HasSuffix(targetPath, "/") && strings.Contains(targetPath, ".")
-	hasExistingFiles := false
+	// 3. cone/non-cone 모드 확인 및 전환
+	fmt.Println("\n3. Sparse Checkout 모드 결정 중...")
 	
-	for _, path := range currentPaths {
-		if !strings.HasSuffix(path, "/") && strings.Contains(path, ".") {
-			hasExistingFiles = true
-			break
-		}
+	// 새로 추가할 경로와 기존 경로를 모두 확인
+	newPaths := []string{targetPath}
+	if err := utils.EnsureNonConeMode(newPaths, currentPaths); err != nil {
+		fmt.Printf("   ⚠️ 모드 전환 중 경고: %v\n", err)
 	}
 	
-	// 4. cone/non-cone 모드 결정 및 전환
-	fmt.Println("\n3. Sparse Checkout 모드 결정 중...")
+	// 현재 모드 표시
+	isNewPathFile := utils.IsFilePath(targetPath)
+	hasExistingFiles := utils.HasFilePaths(currentPaths)
 	needsNonCone := hasExistingFiles || isNewPathFile
 	currentConeMode := utils.CheckConeMode()
 	
-	if needsNonCone && currentConeMode {
-		fmt.Println("   📋 파일 경로가 감지되어 non-cone 모드로 전환합니다...")
-		if err := utils.RunGitCommand("sparse-checkout", "init", "--no-cone"); err != nil {
-			fmt.Printf("   ⚠️ Non-cone 모드 전환 실패: %v\n", err)
-		} else {
-			fmt.Println("   ✅ Non-cone 모드로 전환 완료")
-		}
-	} else if needsNonCone {
-		fmt.Println("   ✅ 이미 non-cone 모드입니다 (파일 경로 지원)")
+	if needsNonCone && !currentConeMode {
+		fmt.Println("   ✅ Non-cone 모드 (파일 경로 지원)")
+	} else if needsNonCone && currentConeMode {
+		fmt.Println("   ✅ Non-cone 모드로 전환 완료")
 	} else if !currentConeMode {
 		fmt.Println("   ✅ Non-cone 모드 유지 (기존 설정)")
 	} else {
