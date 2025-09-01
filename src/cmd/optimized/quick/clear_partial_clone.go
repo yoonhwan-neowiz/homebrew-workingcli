@@ -10,22 +10,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewExpandFilterCmd creates the Expand Filter removal command
-func NewExpandFilterCmd() *cobra.Command {
+// NewClearPartialCloneCmd creates the Partial Clone filter removal command
+func NewClearPartialCloneCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "expand-filter",
-		Short: "Partial Clone 필터 제거 (모든 파일 다운로드)",
+		Use:     "clear-partial-clone",
+		Aliases: []string{"cpc", "remove-blob-limit", "full-clone"},
+		Short:   "Partial Clone 필터 제거 (모든 파일 다운로드)",
 		Long: `Partial Clone 필터를 완전히 제거하여 모든 대용량 파일을 다운로드합니다.
 Sparse Checkout은 유지하면서 blob:limit 필터만 해제하여 
 현재 checkout된 경로의 모든 파일을 크기 제한 없이 다운로드합니다.
 주의: 디스크 공간을 많이 사용할 수 있습니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			executeExpandFilter()
+			executeClearPartialClone()
 		},
 	}
 }
 
-func executeExpandFilter() {
+func executeClearPartialClone() {
 	fmt.Println("🔄 Partial Clone 필터 제거 프로세스 시작")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	
@@ -73,10 +74,10 @@ func executeExpandFilter() {
 	// 디스크 사용량 확인
 	diskUsage := utils.GetDiskUsage()
 	fmt.Printf("\n💾 현재 디스크 사용량:\n")
-	if gitSize, ok := diskUsage[".git"]; ok {
+	if gitSize, ok := diskUsage["git"]; ok {
 		fmt.Printf("   .git 폴더: %s\n", gitSize)
 	}
-	if projectSize, ok := diskUsage["."]; ok {
+	if projectSize, ok := diskUsage["total"]; ok {
 		fmt.Printf("   프로젝트 전체: %s\n", projectSize)
 	}
 	
@@ -147,16 +148,16 @@ func executeExpandFilter() {
 	// 새로운 디스크 사용량
 	newDiskUsage := utils.GetDiskUsage()
 	fmt.Printf("\n💾 변경 후 디스크 사용량:\n")
-	if gitSize, ok := newDiskUsage[".git"]; ok {
+	if gitSize, ok := newDiskUsage["git"]; ok {
 		fmt.Printf("   .git 폴더: %s", gitSize)
-		if oldSize, ok := diskUsage[".git"]; ok && oldSize != gitSize {
+		if oldSize, ok := diskUsage["git"]; ok && oldSize != gitSize {
 			fmt.Printf(" (변경 전: %s)", oldSize)
 		}
 		fmt.Println()
 	}
-	if projectSize, ok := newDiskUsage["."]; ok {
+	if projectSize, ok := newDiskUsage["total"]; ok {
 		fmt.Printf("   프로젝트 전체: %s", projectSize)
-		if oldSize, ok := diskUsage["."]; ok && oldSize != projectSize {
+		if oldSize, ok := diskUsage["total"]; ok && oldSize != projectSize {
 			fmt.Printf(" (변경 전: %s)", oldSize)
 		}
 		fmt.Println()

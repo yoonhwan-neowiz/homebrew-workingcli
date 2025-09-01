@@ -10,21 +10,22 @@ import (
 	"workingcli/src/utils"
 )
 
-// NewClearFilterBranchCmd creates the submodule Clear Filter Branch command
-func NewClearFilterBranchCmd() *cobra.Command {
+// NewClearBranchScopeCmd creates the submodule Clear Branch Scope command
+func NewClearBranchScopeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "clear-filter-branch",
-		Short: "서브모듈 브랜치 필터 제거 (모든 브랜치 표시)",
-		Long: `서브모듈의 브랜치 필터를 제거하여 모든 로컬/원격 브랜치가 표시되도록 합니다.
-filter-branch로 설정한 필터를 초기화합니다.`,
+		Use:     "clear-branch-scope",
+		Aliases: []string{"cbs", "unscope", "show-all"},
+		Short:   "서브모듈 브랜치 범위 제거 (모든 브랜치 표시)",
+		Long: `서브모듈의 브랜치 범위를 제거하여 모든 로컬/원격 브랜치가 표시되도록 합니다.
+set-branch-scope로 설정한 범위를 초기화합니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runSubmoduleClearFilter()
+			runSubmoduleClearScope()
 		},
 	}
 }
 
-func runSubmoduleClearFilter() {
-	fmt.Println("\n🔧 서브모듈 브랜치 필터 제거")
+func runSubmoduleClearScope() {
+	fmt.Println("\n🔧 서브모듈 브랜치 범위 제거")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	
 	// 서브모듈 존재 확인
@@ -47,8 +48,8 @@ func runSubmoduleClearFilter() {
 		return
 	}
 	
-	// 현재 필터가 설정된 서브모듈 찾기
-	var hasFilter bool
+	// 현재 범위가 설정된 서브모듈 찾기
+	var hasScope bool
 	var filteredSubmodules []string
 	filterInfo := make(map[string][]string)
 	
@@ -57,7 +58,7 @@ func runSubmoduleClearFilter() {
 			continue
 		}
 		
-		configKey := fmt.Sprintf("submodule.%s.branchFilter", path)
+		configKey := fmt.Sprintf("submodule.%s.branchScope", path)
 		getCmd := exec.Command("git", "config", "--get", configKey)
 		output, err := getCmd.Output()
 		
@@ -67,13 +68,13 @@ func runSubmoduleClearFilter() {
 				branches := strings.Split(branchList, ",")
 				filterInfo[path] = branches
 				filteredSubmodules = append(filteredSubmodules, path)
-				hasFilter = true
+				hasScope = true
 			}
 		}
 	}
 	
-	if !hasFilter {
-		fmt.Println("\nℹ️  현재 설정된 브랜치 필터가 없습니다")
+	if !hasScope {
+		fmt.Println("\nℹ️  현재 설정된 브랜치 범위가 없습니다")
 		return
 	}
 	
@@ -84,7 +85,7 @@ func runSubmoduleClearFilter() {
 	}
 	
 	// 사용자 확인
-	if !utils.ConfirmWithDefault("\n브랜치 필터를 제거하시겠습니까?", false) {
+	if !utils.ConfirmWithDefault("\n브랜치 범위를 제거하시겠습니까?", false) {
 		fmt.Println("\n✨ 작업이 취소되었습니다")
 		return
 	}
@@ -99,7 +100,7 @@ func clearSubmoduleBranchFilters(submodules []string) {
 	
 	for _, path := range submodules {
 		// 메인 저장소의 서브모듈 설정 제거
-		configKey := fmt.Sprintf("submodule.%s.branchFilter", path)
+		configKey := fmt.Sprintf("submodule.%s.branchScope", path)
 		unsetCmd := exec.Command("git", "config", "--unset", configKey)
 		if err := unsetCmd.Run(); err != nil {
 			// Exit code 5는 키가 없는 경우 (이미 제거됨)
@@ -115,11 +116,11 @@ func clearSubmoduleBranchFilters(submodules []string) {
 		}
 		
 		// 서브모듈 디렉토리의 설정도 제거
-		submoduleUnsetCmd := exec.Command("git", "-C", path, "config", "--unset", "workingcli.branchFilter")
+		submoduleUnsetCmd := exec.Command("git", "-C", path, "config", "--unset", "workingcli.branchScope")
 		submoduleUnsetCmd.Run() // 실패해도 무시 (서브모듈 내부 설정은 선택적)
 	}
 	
-	fmt.Println("\n✅ 서브모듈 브랜치 필터가 제거되었습니다")
+	fmt.Println("\n✅ 서브모듈 브랜치 범위가 제거되었습니다")
 	fmt.Println("\n📋 결과:")
 	fmt.Println("   • 모든 로컬 브랜치가 표시됩니다")
 	fmt.Println("   • 모든 원격 브랜치가 표시됩니다")

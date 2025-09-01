@@ -759,33 +759,66 @@ func GetRemoteBranches() []string {
 	return branches
 }
 
-// GetBranchFilter returns current branch filter from git config
-func GetBranchFilter() []string {
-	cmd := exec.Command("git", "config", "--get", "custom.branchFilter")
+// GetBranchScope returns current branch scope from git config with migration support
+func GetBranchScope() []string {
+	// Try new key first
+	cmd := exec.Command("git", "config", "--get", "custom.branchScope")
 	output, err := cmd.Output()
-	if err != nil {
-		return []string{}
+	if err == nil && len(output) > 0 {
+		scopeStr := strings.TrimSpace(string(output))
+		if scopeStr != "" && scopeStr != "*" {
+			return strings.Split(scopeStr, ",")
+		}
 	}
 
-	filterStr := strings.TrimSpace(string(output))
-	if filterStr == "" || filterStr == "*" {
-		return []string{}
+	// Fallback to old key for backward compatibility
+	cmd = exec.Command("git", "config", "--get", "custom.branchFilter")
+	output, err = cmd.Output()
+	if err == nil && len(output) > 0 {
+		filterStr := strings.TrimSpace(string(output))
+		if filterStr != "" && filterStr != "*" {
+			// Migrate to new key
+			exec.Command("git", "config", "custom.branchScope", filterStr).Run()
+			exec.Command("git", "config", "--unset", "custom.branchFilter").Run()
+			return strings.Split(filterStr, ",")
+		}
 	}
 
-	return strings.Split(filterStr, ",")
+	return []string{}
 }
 
-// SetBranchFilter sets branch filter in git config
+// GetBranchFilter is deprecated, use GetBranchScope instead
+func GetBranchFilter() []string {
+	return GetBranchScope()
+}
+
+// SetBranchScope sets branch scope in git config
+func SetBranchScope(branches []string) error {
+	scopeStr := strings.Join(branches, ",")
+	cmd := exec.Command("git", "config", "custom.branchScope", scopeStr)
+	return cmd.Run()
+}
+
+// SetBranchFilter is deprecated, use SetBranchScope instead
 func SetBranchFilter(branches []string) error {
-	filterStr := strings.Join(branches, ",")
-	cmd := exec.Command("git", "config", "custom.branchFilter", filterStr)
-	return cmd.Run()
+	return SetBranchScope(branches)
 }
 
-// ClearBranchFilter removes branch filter from git config
+// ClearBranchScope removes branch scope from git config
+func ClearBranchScope() error {
+	// Remove new key
+	cmd := exec.Command("git", "config", "--unset", "custom.branchScope")
+	err := cmd.Run()
+	
+	// Also remove old key if exists (cleanup)
+	exec.Command("git", "config", "--unset", "custom.branchFilter").Run()
+	
+	return err
+}
+
+// ClearBranchFilter is deprecated, use ClearBranchScope instead
 func ClearBranchFilter() error {
-	cmd := exec.Command("git", "config", "--unset", "custom.branchFilter")
-	return cmd.Run()
+	return ClearBranchScope()
 }
 
 // CountLocalBranches returns the number of local branches
@@ -866,7 +899,7 @@ func InitSparseCheckoutWithMode(paths []string) error {
 	// Check if any path is a file
 	hasFiles := HasFilePaths(paths)
 	
-	var cmd *exec.Command
+	var cmd *exec.Cmd
 	if hasFiles {
 		// Use non-cone mode for file paths
 		cmd = exec.Command("git", "sparse-checkout", "init", "--no-cone")

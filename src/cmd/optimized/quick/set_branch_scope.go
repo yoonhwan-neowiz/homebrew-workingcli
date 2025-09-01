@@ -10,32 +10,33 @@ import (
 	"workingcli/src/utils"
 )
 
-// NewFilterBranchCmd creates the Filter Branch command
-func NewFilterBranchCmd() *cobra.Command {
+// NewSetBranchScopeCmd creates the Set Branch Scope command
+func NewSetBranchScopeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "filter-branch [브랜치1] [브랜치2] ...",
-		Short: "브랜치 필터 설정 (특정 브랜치만 표시)",
-		Long: `브랜치 필터를 설정하여 선택한 브랜치만 표시되도록 합니다.
+		Use:     "set-branch-scope [브랜치1] [브랜치2] ...",
+		Aliases: []string{"sbs", "scope", "branch-limit"},
+		Short:   "브랜치 범위 설정 (특정 브랜치만 표시)",
+		Long: `브랜치 범위를 설정하여 선택한 브랜치만 표시되도록 합니다.
 브랜치명을 입력하면 로컬과 origin 브랜치가 모두 필터링됩니다.
 
 사용 예시:
-  ga opt workspace filter-branch                    # 대화형 모드
-  ga opt workspace filter-branch main develop      # 공백으로 구분하여 브랜치 지정
-  ga opt workspace filter-branch feature/test      # feature 브랜치만 표시`,
+  ga opt quick set-branch-scope                # 대화형 모드
+  ga opt quick sbs main develop                # 짧은 별칭 사용
+  ga opt quick scope feature/test              # feature 브랜치만 표시`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runFilterBranch(args)
+			runSetBranchScope(args)
 		},
 	}
 }
 
-func runFilterBranch(args []string) {
+func runSetBranchScope(args []string) {
 	// Git 저장소 확인
 	if !utils.IsGitRepository() {
 		fmt.Println("❌ Git 저장소가 아닙니다")
 		return
 	}
 
-	fmt.Println("\n🔧 브랜치 필터 설정")
+	fmt.Println("\n🔧 브랜치 범위 설정")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// args가 있으면 바로 처리
@@ -53,26 +54,26 @@ func runFilterBranch(args []string) {
 		}
 		
 		if len(branches) > 0 {
-			applyBranchFilter(branches)
+			applyBranchScope(branches)
 			return
 		}
 	}
 
-	// 현재 필터 설정 확인
-	currentFilter := utils.GetBranchFilter()
-	if len(currentFilter) > 0 {
-		fmt.Println("\n📋 현재 필터링된 브랜치:")
-		for _, branch := range currentFilter {
+	// 현재 범위 설정 확인
+	currentScope := utils.GetBranchScope()
+	if len(currentScope) > 0 {
+		fmt.Println("\n📋 현재 설정된 브랜치 범위:")
+		for _, branch := range currentScope {
 			fmt.Printf("   • %s\n", branch)
 		}
 		fmt.Println()
 	}
 
 	// 대화형 모드
-	interactiveFilterMode()
+	interactiveScopeMode()
 }
 
-func interactiveFilterMode() {
+func interactiveScopeMode() {
 	reader := bufio.NewReader(os.Stdin)
 	
 	// 모든 브랜치 목록 가져오기 (중복 제거)
@@ -88,7 +89,7 @@ func interactiveFilterMode() {
 		fmt.Printf("%2d. %s\n", i+1, branch)
 	}
 
-	fmt.Println("\n필터링할 브랜치를 선택하세요:")
+	fmt.Println("\n범위에 포함할 브랜치를 선택하세요:")
 	fmt.Println("• 단일 선택: 번호 또는 브랜치명 입력")
 	fmt.Println("• 다중 선택: 공백으로 구분 (예: 1 3 5 또는 main develop)")
 	fmt.Println("• 취소: q 또는 quit")
@@ -131,20 +132,20 @@ func interactiveFilterMode() {
 		return
 	}
 
-	// 브랜치 필터 적용
-	applyBranchFilter(selectedBranches)
+	// 브랜치 범위 적용
+	applyBranchScope(selectedBranches)
 }
 
-func applyBranchFilter(branches []string) {
-	// Git config에 브랜치 필터 저장
-	err := utils.SetBranchFilter(branches)
+func applyBranchScope(branches []string) {
+	// Git config에 브랜치 범위 저장
+	err := utils.SetBranchScope(branches)
 	if err != nil {
-		fmt.Printf("\n❌ 브랜치 필터 설정 실패: %v\n", err)
+		fmt.Printf("\n❌ 브랜치 범위 설정 실패: %v\n", err)
 		return
 	}
 
-	fmt.Println("\n✅ 브랜치 필터가 설정되었습니다")
-	fmt.Println("\n📋 필터링된 브랜치:")
+	fmt.Println("\n✅ 브랜치 범위가 설정되었습니다")
+	fmt.Println("\n📋 설정된 브랜치 범위:")
 	for _, branch := range branches {
 		fmt.Printf("   • %s (로컬 및 origin/%s)\n", branch, branch)
 	}
@@ -153,7 +154,7 @@ func applyBranchFilter(branches []string) {
 	localBranches := utils.GetLocalBranches()
 	remoteBranches := utils.GetRemoteBranches()
 	
-	fmt.Println("\n🔍 실제 필터링 대상:")
+	fmt.Println("\n🔍 실제 범위 대상:")
 	for _, branch := range branches {
 		hasLocal := utils.Contains(localBranches, branch)
 		hasRemote := utils.Contains(remoteBranches, "origin/"+branch)
@@ -170,7 +171,7 @@ func applyBranchFilter(branches []string) {
 	}
 
 	fmt.Println("\n💡 팁:")
-	fmt.Println("   • 필터를 제거하려면 'ga opt workspace clear-filter' 명령을 사용하세요")
+	fmt.Println("   • 범위를 제거하려면 'ga opt quick clear-branch-scope' 명령을 사용하세요")
 	fmt.Println("   • 이 설정은 프로젝트별로 저장됩니다")
 }
 

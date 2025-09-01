@@ -11,32 +11,33 @@ import (
 	"workingcli/src/utils"
 )
 
-// NewFilterBranchCmd creates the submodule Filter Branch command
-func NewFilterBranchCmd() *cobra.Command {
+// NewSetBranchScopeCmd creates the submodule Set Branch Scope command
+func NewSetBranchScopeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "filter-branch [브랜치1] [브랜치2] ...",
-		Short: "서브모듈 브랜치 필터 설정 (특정 브랜치만 표시)",
-		Long: `서브모듈의 브랜치 필터를 설정하여 선택한 브랜치만 표시되도록 합니다.
+		Use:     "set-branch-scope [브랜치1] [브랜치2] ...",
+		Aliases: []string{"sbs", "scope", "branch-limit"},
+		Short:   "서브모듈 브랜치 범위 설정 (특정 브랜치만 표시)",
+		Long: `서브모듈의 브랜치 범위를 설정하여 선택한 브랜치만 표시되도록 합니다.
 브랜치명을 입력하면 로컬과 origin 브랜치가 모두 필터링됩니다.
 
 사용 예시:
-  ga opt submodule filter-branch                    # 대화형 모드
-  ga opt submodule filter-branch main develop      # 공백으로 구분하여 브랜치 지정
-  ga opt submodule filter-branch feature/test      # feature 브랜치만 표시`,
+  ga opt submodule set-branch-scope                # 대화형 모드
+  ga opt submodule sbs main develop                # 짧은 별칭 사용
+  ga opt submodule scope feature/test              # feature 브랜치만 표시`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runSubmoduleFilterBranch(args)
+			runSubmoduleSetBranchScope(args)
 		},
 	}
 }
 
-func runSubmoduleFilterBranch(args []string) {
+func runSubmoduleSetBranchScope(args []string) {
 	// 서브모듈 존재 확인
 	if _, err := os.Stat(".gitmodules"); os.IsNotExist(err) {
 		fmt.Println("❌ 서브모듈이 없습니다")
 		return
 	}
 	
-	fmt.Println("\n🔧 서브모듈 브랜치 필터 설정")
+	fmt.Println("\n🔧 서브모듈 브랜치 범위 설정")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	
 	// 서브모듈 목록 가져오기
@@ -238,7 +239,7 @@ func applySubmoduleBranchFilter(submodulePaths []string, branches []string) {
 		successCount++
 	}
 	
-	fmt.Println("\n✅ 서브모듈 브랜치 필터가 설정되었습니다")
+	fmt.Println("\n✅ 서브모듈 브랜치 범위가 설정되었습니다")
 	fmt.Println("\n📋 필터링된 브랜치:")
 	for _, branch := range branches {
 		fmt.Printf("   • %s (로컬 및 origin/%s)\n", branch, branch)

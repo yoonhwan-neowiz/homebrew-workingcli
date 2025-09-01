@@ -10,44 +10,45 @@ import (
 	"workingcli/src/utils"
 )
 
-// NewClearFilterBranchCmd creates the Clear Filter Branch command
-func NewClearFilterBranchCmd() *cobra.Command {
+// NewClearBranchScopeCmd creates the Clear Branch Scope command
+func NewClearBranchScopeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "clear-filter-branch",
-		Short: "브랜치 필터 제거 (모든 브랜치 표시)",
-		Long: `브랜치 필터를 제거하여 모든 로컬/원격 브랜치가 표시되도록 합니다.
-filter-branch로 설정한 필터를 초기화합니다.`,
+		Use:     "clear-branch-scope",
+		Aliases: []string{"cbs", "unscope", "show-all"},
+		Short:   "브랜치 범위 제거 (모든 브랜치 표시)",
+		Long: `브랜치 범위를 제거하여 모든 로컬/원격 브랜치가 표시되도록 합니다.
+set-branch-scope로 설정한 범위를 초기화합니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runClearFilter()
+			runClearScope()
 		},
 	}
 }
 
-func runClearFilter() {
+func runClearScope() {
 	// Git 저장소 확인
 	if !utils.IsGitRepository() {
 		fmt.Println("❌ Git 저장소가 아닙니다")
 		return
 	}
 
-	fmt.Println("\n🔧 브랜치 필터 제거")
+	fmt.Println("\n🔧 브랜치 범위 제거")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-	// 현재 필터 설정 확인
-	currentFilter := utils.GetBranchFilter()
-	if len(currentFilter) == 0 {
-		fmt.Println("\nℹ️ 현재 설정된 브랜치 필터가 없습니다")
+	// 현재 범위 설정 확인
+	currentScope := utils.GetBranchScope()
+	if len(currentScope) == 0 {
+		fmt.Println("\nℹ️ 현재 설정된 브랜치 범위가 없습니다")
 		return
 	}
 
-	fmt.Println("\n📋 현재 필터링된 브랜치:")
-	for _, branch := range currentFilter {
+	fmt.Println("\n📋 현재 설정된 브랜치 범위:")
+	for _, branch := range currentScope {
 		fmt.Printf("   • %s\n", branch)
 	}
 
 	// 사용자 확인
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("\n브랜치 필터를 제거하시겠습니까? (y/N): ")
+	fmt.Print("\n브랜치 범위를 제거하시겠습니까? (y/N): ")
 	answer, _ := reader.ReadString('\n')
 	answer = strings.TrimSpace(strings.ToLower(answer))
 
@@ -56,19 +57,19 @@ func runClearFilter() {
 		return
 	}
 
-	// 필터 제거
-	clearBranchFilter()
+	// 범위 제거
+	clearBranchScope()
 }
 
-func clearBranchFilter() {
-	// Git config에서 브랜치 필터 제거
-	err := utils.ClearBranchFilter()
+func clearBranchScope() {
+	// Git config에서 브랜치 범위 제거
+	err := utils.ClearBranchScope()
 	if err != nil {
-		fmt.Printf("\n⚠️ 브랜치 필터 제거 중 경고: %v\n", err)
+		fmt.Printf("\n⚠️ 브랜치 범위 제거 중 경고: %v\n", err)
 		// 경고만 표시하고 계속 진행
 	}
 
-	fmt.Println("\n✅ 브랜치 필터가 제거되었습니다")
+	fmt.Println("\n✅ 브랜치 범위가 제거되었습니다")
 	fmt.Println("\n📋 결과:")
 	fmt.Println("   • 모든 로컬 브랜치가 표시됩니다")
 	fmt.Println("   • 모든 원격 브랜치가 표시됩니다")

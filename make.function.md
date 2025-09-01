@@ -151,8 +151,8 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 - [x] setup.migrate - (deprecated - to-slim 사용)
 - [x] setup.performance - 성능 최적화 설정
 - [x] workspace.expand-path - 특정 경로 확장
-- [x] quick.filter-branch - 브랜치 필터 설정 (특정 브랜치만 표시)
-- [x] quick.clear-filter-branch - 브랜치 필터 제거 (모든 브랜치 표시)
+- [x] quick.set-branch-scope - 브랜치 범위 설정 (sbs, scope, branch-limit)
+- [x] quick.clear-branch-scope - 브랜치 범위 제거 (cbs, unscope, show-all)
 - [x] workspace.restore-branch - (DEPRECATED - 사용하지 않음)
 - [x] quick.shallow - 히스토리 줄이기
 - [x] quick.unshallow - 히스토리 복원
@@ -166,8 +166,8 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 - [x] submodule.expand-filter - 서브모듈 Partial Clone 필터 제거
 - [x] submodule.shallow - 서브모듈 shallow 변환 (recursive)
 - [x] submodule.unshallow - 서브모듈 히스토리 복원 (recursive)
-- [x] submodule.filter-branch - 서브모듈 브랜치 필터 설정
-- [x] submodule.clear-filter-branch - 서브모듈 브랜치 필터 제거
+- [x] submodule.set-branch-scope - 서브모듈 브랜치 범위 설정 (sbs, scope, branch-limit)
+- [x] submodule.clear-branch-scope - 서브모듈 브랜치 범위 제거 (cbs, unscope, show-all)
 
 ---
 
@@ -185,7 +185,7 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 | `expand_slim.go`          | `expand-slim`          | 선택적 경로 확장           | ✅ 구현 완료 |
 | `expand_filter.go`        | `expand-filter`        | Partial Clone 필터 제거 | ✅ 구현 완료 |
 | `auto_find_merge_base.go` | `auto-find-merge-base` | 브랜치 병합점 자동 찾기       | ✅ 구현 완료 |
-| `filter_branch.go`        | `filter-branch`        | 브랜치 필터 설정           | ✅ 구현 완료 |
+| `set_branch_scope.go`     | `set-branch-scope`     | 브랜치 범위 설정           | ✅ 구현 완료 |
 | `clear_filter_branch.go`  | `clear-filter`         | 브랜치 필터 제거           | ✅ 구현 완료 |
 | `shallow.go`              | `shallow`              | 히스토리 줄이기            | ✅ 구현 완료 |
 | `unshallow.go`            | `unshallow`            | 히스토리 복원             | ✅ 구현 완료 |
@@ -220,8 +220,8 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 | `expand_filter.go` | `expand-filter` | 필터 제거                  | ✅ 구현 완료 |
 | `shallow.go`       | `shallow`       | shallow 변환 (recursive) | ✅ 구현 완료 |
 | `unshallow.go`     | `unshallow`     | 히스토리 복원 (recursive)    | ✅ 구현 완료 |
-| `filter_branch.go` | `filter-branch` | 브랜치 필터                 | ✅ 구현 완료 |
-| `clear_filter_branch.go` | `clear-filter-branch` | 필터 제거          | ✅ 구현 완료 |
+| `set_branch_scope.go` | `set-branch-scope` | 브랜치 범위 설정         | ✅ 구현 완료 |
+| `clear_branch_scope.go` | `clear-branch-scope` | 범위 제거          | ✅ 구현 완료 |
 
 ---
 
@@ -635,7 +635,7 @@ ga opt quick to-slim
    - 파일/폴더 구분 표시
 ```
 
-### quick.filter-branch (`src/cmd/optimized/quick/filter_branch.go`)
+### quick.set-branch-scope (`src/cmd/optimized/quick/set_branch_scope.go`)
 
 **상태**: ✅ 구현 완료 (2025-08-27) - Quick으로 이동
 **목적**: 브랜치 필터 설정 (특정 브랜치만 표시)
@@ -665,7 +665,7 @@ ga opt quick to-slim
    - 프로젝트별 설정 저장
 ```
 
-### quick.clear-filter-branch (`src/cmd/optimized/quick/clear_filter_branch.go`)
+### quick.clear-branch-scope (`src/cmd/optimized/quick/clear_branch_scope.go`)
 
 **상태**: ✅ 구현 완료 (2025-08-27) - Quick으로 이동
 **목적**: 브랜치 필터 제거 (모든 브랜치 표시)
@@ -919,9 +919,9 @@ ga opt submodule shallow 10     # depth=10으로 설정
 3. 결과 확인
 ```
 
-### submodule.filter-branch (`src/cmd/optimized/submodule/filter_branch.go`)
+### submodule.set-branch-scope (`src/cmd/optimized/submodule/set_branch_scope.go`)
 
-**목적**: 서브모듈의 브랜치 필터 설정 (quick.filter-branch의 서브모듈 버전)
+**목적**: 서브모듈의 브랜치 범위 설정 (quick.set-branch-scope의 서브모듈 버전)
 **구현 내용**:
 
 ```bash
@@ -938,7 +938,7 @@ ga opt submodule shallow 10     # depth=10으로 설정
 
 ### submodule.clear-filter (`src/cmd/optimized/submodule/clear_filter.go`)
 
-**목적**: 서브모듈의 브랜치 필터 제거 (quick.clear-filter-branch의 서브모듈 버전)
+**목적**: 서브모듈의 브랜치 범위 제거 (quick.clear-branch-scope의 서브모듈 버전)
 **구현 내용**:
 
 ```bash

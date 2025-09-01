@@ -50,10 +50,10 @@ func NewOptimizedCmd() *cobra.Command {
 		quick.NewToSlimCmd(),        // To SLIM
 		quick.NewToFullCmd(),        // To FULL
 		quick.NewExpandSlimCmd(),    // Expand SLIM
-		quick.NewExpandFilterCmd(),  // Expand Filter
+		quick.NewClearPartialCloneCmd(),  // Clear Partial Clone
 		quick.NewAutoFindMergeBaseCmd(),  // Auto Find Merge Base
-		quick.NewFilterBranchCmd(),    // Filter Branch
-		quick.NewClearFilterBranchCmd(),  // Clear Filter Branch
+		quick.NewSetBranchScopeCmd(),    // Set Branch Scope
+		quick.NewClearBranchScopeCmd(),  // Clear Branch Scope
 		quick.NewShallowCmd(),          // Shallow
 		quick.NewUnshallowCmd(),        // Unshallow
 	)
@@ -113,8 +113,8 @@ func NewOptimizedCmd() *cobra.Command {
 		submodule.NewUnshallowCmd(),       // Unshallow (recursive)
 		
 		// 브랜치 필터
-		submodule.NewFilterBranchCmd(),    // Filter-Branch (submodule)
-		submodule.NewClearFilterBranchCmd(), // Clear-Filter-Branch (submodule)
+		submodule.NewSetBranchScopeCmd(),    // Set Branch Scope (submodule)
+		submodule.NewClearBranchScopeCmd(), // Clear Branch Scope (submodule)
 	)
 	
 	cmd.AddCommand(helpCmd, quickCmd, setupCmd, workspaceCmd, advancedCmd, submoduleCmd)
