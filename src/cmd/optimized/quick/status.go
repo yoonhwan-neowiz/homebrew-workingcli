@@ -3,14 +3,18 @@ package quick
 import (
 	"fmt"
 	"os"
+	"strings"
 	"workingcli/src/utils"
+	"workingcli/src/config"
 	
 	"github.com/spf13/cobra"
 )
 
 // NewStatusCmd creates the status check command
 func NewStatusCmd() *cobra.Command {
-	return &cobra.Command{
+	var verbose bool
+	
+	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "현재 최적화 상태 확인",
 		Long: `현재 저장소의 최적화 상태를 한눈에 확인합니다.
@@ -60,22 +64,25 @@ func NewStatusCmd() *cobra.Command {
 - git config --get remote.origin.partialclonefilter  (필터 확인)
 - du -sh .git  (Git 폴더 크기 확인)`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := runStatus(); err != nil {
+			if err := runStatus(verbose); err != nil {
 				fmt.Fprintf(os.Stderr, "❌ 오류 발생: %v\n", err)
 				os.Exit(1)
 			}
 		},
 	}
+	
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "상세 정보 표시")
+	return cmd
 }
 
 // runStatus executes the status check logic
-func runStatus() error {
+func runStatus(verbose bool) error {
 	// 1. Git 저장소 확인
 	if !utils.IsGitRepository() {
 		return fmt.Errorf("현재 디렉토리는 Git 저장소가 아닙니다")
 	}
 
-	// 2. 각종 상태 정보 수집
+	// 2. 기본 상태 정보 수집 (항상)
 	mode := utils.GetOptimizationMode()
 	partialFilter := utils.GetPartialCloneFilter()
 	sparseInfo := utils.GetSparseCheckoutInfo()
@@ -83,14 +90,31 @@ func runStatus() error {
 	diskUsage := utils.GetDiskUsage()
 	objectInfo := utils.GetObjectInfo()
 	submoduleInfo := utils.GetSubmoduleInfo()
-	excludedFiles := utils.GetExcludedLargeFiles(partialFilter)
-	largestFiles := utils.GetLargestFilesInHistory()
-	largestPack := utils.GetLargestPackInfo()
-	dustAnalysis := utils.GetDustAnalysis()
+	
+	// Config 정보 가져오기
+	var configInfo *config.Config
+	configInfo = config.Get()
+	
+	// 3. Verbose 모드에서만 무거운 분석
+	var excludedFiles []map[string]string
+	var largestFiles []map[string]string
+	var largestPack map[string]interface{}
+	var dustAnalysis map[string]interface{}
+	var projectTotalSize string
+	
+	if verbose {
+		excludedFiles = utils.GetExcludedLargeFiles(partialFilter)
+		largestFiles = utils.GetLargestFilesInHistory()
+		largestPack = utils.GetLargestPackInfo()
+		dustAnalysis = utils.GetDustAnalysis()
+		projectTotalSize = utils.GetProjectTotalSize()
+	}
 
-	// 3. 결과 출력
+	// 4. 결과 출력
 	printStatusReport(
+		verbose,
 		mode,
+		configInfo,
 		partialFilter,
 		sparseInfo,
 		shallowInfo,
@@ -101,6 +125,7 @@ func runStatus() error {
 		largestFiles,
 		largestPack,
 		dustAnalysis,
+		projectTotalSize,
 	)
 
 	return nil
@@ -109,7 +134,9 @@ func runStatus() error {
 
 // printStatusReport prints the formatted status report
 func printStatusReport(
+	verbose bool,
 	mode string,
+	configInfo *config.Config,
 	partialFilter string,
 	sparseInfo map[string]interface{},
 	shallowInfo map[string]interface{},
@@ -120,6 +147,7 @@ func printStatusReport(
 	largestFiles []map[string]string,
 	largestPack map[string]interface{},
 	dustAnalysis map[string]interface{},
+	projectTotalSize string,
 ) {
 	// Header
 	fmt.Println("╭─────────────────────────────────────────╮")
@@ -135,11 +163,41 @@ func printStatusReport(
 	}
 	fmt.Printf("│ 모드: %-33s │\n", modeDisplay)
 	
+	// Config 정보 표시
+	if configInfo != nil {
+		if configInfo.Optimize.Mode != "" && configInfo.Optimize.Mode != strings.ToLower(mode) {
+			fmt.Printf("│ ⚠️  Config 모드: %-25s │\n", fmt.Sprintf("%s (불일치)", configInfo.Optimize.Mode))
+		} else if configInfo.Optimize.Mode != "" {
+			fmt.Printf("│ Config 모드: %-28s │\n", configInfo.Optimize.Mode)
+		}
+	}
+	
 	if gitSize, ok := diskUsage["git"]; ok {
 		fmt.Printf("│ .git 폴더: %-28s │\n", gitSize)
 	}
-	if totalSize, ok := diskUsage["total"]; ok {
-		fmt.Printf("│ 프로젝트 전체: %-24s │\n", totalSize)
+	
+	// Verbose 모드에서만 전체 프로젝트 크기 표시
+	if verbose && projectTotalSize != "" && projectTotalSize != "N/A" {
+		fmt.Printf("│ 프로젝트 전체: %-23s │\n", projectTotalSize)
+	}
+	
+	// Config 상세 설정 표시
+	if configInfo != nil {
+		if configInfo.Optimize.Filter.Default != "" {
+			fmt.Printf("│ 필터: %-32s │\n", fmt.Sprintf("blob:limit=%s", configInfo.Optimize.Filter.Default))
+		}
+		if len(configInfo.Optimize.BranchScope) > 0 {
+			fmt.Printf("│ 브랜치 필터: %-25s │\n", fmt.Sprintf("%d개", len(configInfo.Optimize.BranchScope)))
+			for _, branch := range configInfo.Optimize.BranchScope {
+				fmt.Printf("│   - %-35s │\n", branch)
+			}
+		}
+		if len(configInfo.Optimize.Sparse.Paths) > 0 {
+			fmt.Printf("│ Sparse 경로: %-26s │\n", fmt.Sprintf("%d개", len(configInfo.Optimize.Sparse.Paths)))
+			for _, path := range configInfo.Optimize.Sparse.Paths {
+				fmt.Printf("│   - %-35s │\n", utils.TruncateString(path, 35))
+			}
+		}
 	}
 	
 	fmt.Println("│                                         │")
@@ -250,22 +308,26 @@ func printStatusReport(
 		}
 	}
 	
-	// Dust analysis
-	if available, ok := dustAnalysis["available"].(bool); ok && available {
-		if topDirs, ok := dustAnalysis["topDirs"].([]map[string]string); ok && len(topDirs) > 0 {
-			fmt.Println("│                                         │")
-			fmt.Println("│ 💾 Dust 디스크 분석 (Top 5):           │")
-			for _, dir := range topDirs {
-				fmt.Printf("│  • %-25s %10s │\n",
-					utils.TruncateString(dir["path"], 25),
-					dir["size"])
+	// Dust analysis (verbose에서만)
+	if verbose {
+		if available, ok := dustAnalysis["available"].(bool); ok && available {
+			if topDirs, ok := dustAnalysis["topDirs"].([]map[string]string); ok && len(topDirs) > 0 {
+				fmt.Println("│                                         │")
+				fmt.Println("│ 💾 Dust 디스크 분석 (Top 5):           │")
+				for _, dir := range topDirs {
+					fmt.Printf("│  • %-25s %10s │\n",
+						utils.TruncateString(dir["path"], 25),
+						dir["size"])
+				}
 			}
 		}
-	} else {
-		fmt.Println("│                                         │")
-		fmt.Println("│ ℹ️  dust 명령어가 설치되어 있지 않음    │")
 	}
 	
 	fmt.Println("╰─────────────────────────────────────────╯")
+	
+	// 기본 모드에서는 힌트 표시
+	if !verbose {
+		fmt.Println("\n💡 상세 정보: ga opt quick status -v")
+	}
 }
 

@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -93,27 +92,37 @@ func GetShallowInfo() map[string]interface{} {
 	return info
 }
 
-// GetDiskUsage returns disk usage information
+// GetDiskUsage returns disk usage information (optimized for speed)
+// Uses dust if available, otherwise falls back to du
 func GetDiskUsage() map[string]string {
 	usage := make(map[string]string)
 	
-	// .git 폴더 크기
-	cmd := exec.Command("du", "-sh", ".git")
-	if output, err := cmd.Output(); err == nil {
-		fields := strings.Fields(string(output))
-		if len(fields) > 0 {
-			usage["git"] = fields[0]
+	// Try dust first (faster and better output)
+	if _, err := exec.LookPath("dust"); err == nil {
+		// Use dust for .git folder
+		cmd := exec.Command("dust", "-n", "1", "-d", "0", ".git")
+		if output, err := cmd.Output(); err == nil {
+			lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+			if len(lines) > 0 {
+				fields := strings.Fields(lines[0])
+				if len(fields) >= 1 {
+					usage["git"] = fields[0]
+				}
+			}
+		}
+	} else {
+		// Fallback to du if dust is not available
+		cmd := exec.Command("du", "-sh", ".git")
+		if output, err := cmd.Output(); err == nil {
+			fields := strings.Fields(string(output))
+			if len(fields) > 0 {
+				usage["git"] = fields[0]
+			}
 		}
 	}
 	
-	// 전체 프로젝트 크기
-	cmd = exec.Command("du", "-sh", ".")
-	if output, err := cmd.Output(); err == nil {
-		fields := strings.Fields(string(output))
-		if len(fields) > 0 {
-			usage["total"] = fields[0]
-		}
-	}
+	// 전체 프로젝트 크기는 verbose 모드에서만 (따로 호출)
+	// 기본 모드에서는 생략하여 성능 향상
 	
 	return usage
 }
@@ -329,34 +338,31 @@ func GetExcludedLargeFiles(filter string) []map[string]string {
 		}
 	}
 	
-	// Find large files in git history
-	cmd := exec.Command("git", "rev-list", "--objects", "--all")
-	revListOutput, err := cmd.Output()
+	// Find large files in HEAD only (much faster than full history)
+	cmd := exec.Command("git", "ls-tree", "-r", "-l", "HEAD")
+	output, err := cmd.Output()
 	if err != nil {
 		return excludedFiles
 	}
 	
-	// Get file sizes using git cat-file
-	var largeFiles []map[string]string
-	scanner := bytes.NewBuffer(revListOutput)
-	for {
-		line, err := scanner.ReadString('\n')
-		if err != nil {
-			break
+	// Parse ls-tree output to find large files
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
 		}
-		line = strings.TrimSpace(line)
+		
+		// ls-tree format: <mode> <type> <object> <size>\t<path>
 		fields := strings.Fields(line)
-		if len(fields) >= 2 {
-			objectID := fields[0]
-			filePath := strings.Join(fields[1:], " ")
-			
-			// Get object size
-			cmd = exec.Command("git", "cat-file", "-s", objectID)
-			if sizeOutput, err := cmd.Output(); err == nil {
-				if size, err := strconv.ParseInt(strings.TrimSpace(string(sizeOutput)), 10, 64); err == nil {
-					if size >= sizeLimit {
-						largeFiles = append(largeFiles, map[string]string{
-							"path": filepath.Base(filePath),
+		if len(fields) >= 4 {
+			// Parse size (4th field)
+			if size, err := strconv.ParseInt(fields[3], 10, 64); err == nil {
+				if size >= sizeLimit {
+					// Path is after the tab
+					if tabIndex := strings.Index(line, "\t"); tabIndex > 0 {
+						path := line[tabIndex+1:]
+						excludedFiles = append(excludedFiles, map[string]string{
+							"path": filepath.Base(path),
 							"size": FormatSize(size),
 						})
 					}
@@ -365,58 +371,49 @@ func GetExcludedLargeFiles(filter string) []map[string]string {
 		}
 		
 		// Limit to 5 sample files
-		if len(largeFiles) >= 5 {
+		if len(excludedFiles) >= 5 {
 			break
 		}
 	}
 	
-	return largeFiles
+	return excludedFiles
 }
 
-// GetLargestFilesInHistory returns the 5 largest files in git history with their paths
+// GetLargestFilesInHistory returns the 5 largest files in current HEAD (not full history)
 func GetLargestFilesInHistory() []map[string]string {
 	var largestFiles []map[string]string
 	
-	// Get all objects in history
-	cmd := exec.Command("git", "rev-list", "--objects", "--all")
-	revListOutput, err := cmd.Output()
+	// Get files in HEAD only (much faster than full history)
+	cmd := exec.Command("git", "ls-tree", "-r", "-l", "HEAD")
+	output, err := cmd.Output()
 	if err != nil {
 		return largestFiles
 	}
 	
-	// Collect all file sizes
+	// Parse ls-tree output
 	type fileInfo struct {
 		path string
 		size int64
-		objectID string
 	}
 	var files []fileInfo
 	
-	scanner := bytes.NewBuffer(revListOutput)
-	for {
-		line, err := scanner.ReadString('\n')
-		if err != nil {
-			break
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
 		}
-		line = strings.TrimSpace(line)
+		
+		// ls-tree format: <mode> <type> <object> <size>\t<path>
 		fields := strings.Fields(line)
-		if len(fields) >= 2 {
-			objectID := fields[0]
-			filePath := strings.Join(fields[1:], " ")
-			
-			// Skip if path is empty
-			if filePath == "" {
-				continue
-			}
-			
-			// Get object size
-			cmd = exec.Command("git", "cat-file", "-s", objectID)
-			if sizeOutput, err := cmd.Output(); err == nil {
-				if size, err := strconv.ParseInt(strings.TrimSpace(string(sizeOutput)), 10, 64); err == nil {
+		if len(fields) >= 4 {
+			// Parse size (4th field)
+			if size, err := strconv.ParseInt(fields[3], 10, 64); err == nil {
+				// Path is after the tab
+				if tabIndex := strings.Index(line, "\t"); tabIndex > 0 {
+					path := line[tabIndex+1:]
 					files = append(files, fileInfo{
-						path:     filePath,
-						size:     size,
-						objectID: objectID,
+						path: path,
+						size: size,
 					})
 				}
 			}
@@ -434,17 +431,9 @@ func GetLargestFilesInHistory() []map[string]string {
 	
 	// Take top 5
 	for i := 0; i < 5 && i < len(files); i++ {
-		// Check if file exists in working tree
-		existsInWorking := "(deleted)"
-		if _, err := os.Stat(files[i].path); err == nil {
-			existsInWorking = "(exists)"
-		}
-		
 		largestFiles = append(largestFiles, map[string]string{
-			"path":     files[i].path,
-			"size":     FormatSize(files[i].size),
-			"objectID": files[i].objectID[:7], // Short hash
-			"status":   existsInWorking,
+			"path": files[i].path,
+			"size": FormatSize(files[i].size),
 		})
 	}
 	
@@ -501,12 +490,12 @@ func GetLargestPackInfo() map[string]interface{} {
 }
 
 // GetDustAnalysis runs dust command if available and returns disk usage analysis
+// This is for verbose mode detailed analysis
 func GetDustAnalysis() map[string]interface{} {
 	analysis := make(map[string]interface{})
 	
 	// Check if dust is installed
-	cmd := exec.Command("which", "dust")
-	if err := cmd.Run(); err != nil {
+	if _, err := exec.LookPath("dust"); err != nil {
 		analysis["available"] = false
 		return analysis
 	}
@@ -514,7 +503,7 @@ func GetDustAnalysis() map[string]interface{} {
 	analysis["available"] = true
 	
 	// Run dust with depth limit and reverse order
-	cmd = exec.Command("dust", "-d", "2", "-r", "-n", "5")
+	cmd := exec.Command("dust", "-d", "2", "-r", "-n", "5")
 	output, err := cmd.Output()
 	if err != nil {
 		return analysis
@@ -543,6 +532,35 @@ func GetDustAnalysis() map[string]interface{} {
 	
 	analysis["topDirs"] = topDirs
 	return analysis
+}
+
+// GetProjectTotalSize gets the total project size for verbose mode
+// Uses dust if available for better performance, otherwise falls back to du
+func GetProjectTotalSize() string {
+	// Try dust first
+	if _, err := exec.LookPath("dust"); err == nil {
+		cmd := exec.Command("dust", "-n", "1", "-d", "0", ".")
+		if output, err := cmd.Output(); err == nil {
+			lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+			if len(lines) > 0 {
+				fields := strings.Fields(lines[0])
+				if len(fields) >= 1 {
+					return fields[0]
+				}
+			}
+		}
+	}
+	
+	// Fallback to du
+	cmd := exec.Command("du", "-sh", ".")
+	if output, err := cmd.Output(); err == nil {
+		fields := strings.Fields(string(output))
+		if len(fields) > 0 {
+			return fields[0]
+		}
+	}
+	
+	return "N/A"
 }
 
 // FormatSize formats bytes to human readable format
