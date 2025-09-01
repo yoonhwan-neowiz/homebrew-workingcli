@@ -84,6 +84,22 @@ API 키 설정, 프롬프트 경로 설정 등을 수행할 수 있습니다.`,
 						fmt.Printf("optimize.mode = %s\n", mode)
 					}
 					
+					// 브랜치 스코프 표시
+					if branchScope, ok := optimize["branch_scope"].([]interface{}); ok {
+						if len(branchScope) > 0 {
+							fmt.Print("optimize.branch_scope = [")
+							for i, branch := range branchScope {
+								if i > 0 {
+									fmt.Print(", ")
+								}
+								fmt.Printf("%v", branch)
+							}
+							fmt.Println("]")
+						} else {
+							fmt.Println("optimize.branch_scope = []")
+						}
+					}
+					
 					if filter, ok := optimize["filter"].(map[string]interface{}); ok {
 						if defaultFilter, exists := filter["default"].(string); exists {
 							fmt.Printf("optimize.filter.default = %s\n", defaultFilter)
@@ -114,6 +130,22 @@ API 키 설정, 프롬프트 경로 설정 등을 수행할 수 있습니다.`,
 						fmt.Println("\n[서브모듈 최적화 설정]")
 						if mode, exists := submodule["mode"].(string); exists {
 							fmt.Printf("optimize.submodule.mode = %s\n", mode)
+						}
+						
+						// 서브모듈 브랜치 스코프 표시
+						if branchScope, ok := submodule["branch_scope"].([]interface{}); ok {
+							if len(branchScope) > 0 {
+								fmt.Print("optimize.submodule.branch_scope = [")
+								for i, branch := range branchScope {
+									if i > 0 {
+										fmt.Print(", ")
+									}
+									fmt.Printf("%v", branch)
+								}
+								fmt.Println("]")
+							} else {
+								fmt.Println("optimize.submodule.branch_scope = []")
+							}
 						}
 						
 						if filter, ok := submodule["filter"].(map[string]interface{}); ok {
@@ -160,16 +192,39 @@ API 키 설정, 프롬프트 경로 설정 등을 수행할 수 있습니다.`,
 
 	// set 서브커맨드
 	setCmd := &cobra.Command{
-		Use:   "set [key] [value]",
+		Use:   "set [key] [value...]",
 		Short: "설정 값 저장",
-		Args:  cobra.ExactArgs(2),
+		Long: `설정 값을 저장합니다.
+		
+branch_scope 같은 배열 설정은 여러 값을 공백으로 구분하여 입력할 수 있습니다.
+		
+예시:
+  ga config set ai.provider claude
+  ga config set optimize.branch_scope master develop test
+  ga config set optimize.submodule.branch_scope main feature/new`,
+		Args:  cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]
-			value := args[1]
-			if err := config.Set(key, value); err != nil {
-				return fmt.Errorf("설정 저장 실패: %w", err)
+			
+			// branch_scope 관련 키는 배열로 처리
+			if strings.Contains(key, "branch_scope") {
+				values := args[1:]
+				// "clear" 또는 빈 값으로 초기화
+				if len(values) == 1 && (values[0] == "clear" || values[0] == "") {
+					values = []string{}
+				}
+				if err := config.Set(key, values); err != nil {
+					return fmt.Errorf("설정 저장 실패: %w", err)
+				}
+				fmt.Printf("%s = %v\n", key, values)
+			} else {
+				// 일반 키는 단일 값으로 처리
+				value := args[1]
+				if err := config.Set(key, value); err != nil {
+					return fmt.Errorf("설정 저장 실패: %w", err)
+				}
+				fmt.Printf("%s = %s\n", key, value)
 			}
-			fmt.Printf("%s = %s\n", key, value)
 			return nil
 		},
 	}

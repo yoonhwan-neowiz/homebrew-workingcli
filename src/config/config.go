@@ -27,7 +27,8 @@ type Config struct {
 		Commit  string `mapstructure:"commit"`  // 커밋 프롬프트 파일 경로
 	} `mapstructure:"prompt"`
 	Optimize struct {
-		Mode   string `mapstructure:"mode"` // slim 또는 full
+		Mode        string   `mapstructure:"mode"`         // slim 또는 full
+		BranchScope []string `mapstructure:"branch_scope"` // 브랜치 필터 리스트
 		Filter struct {
 			Default string            `mapstructure:"default"` // 기본 필터 (1m)
 			Options map[string]string `mapstructure:"options"` // 필터 옵션들
@@ -36,7 +37,8 @@ type Config struct {
 			Paths []string `mapstructure:"paths"` // Sparse Checkout 경로들
 		} `mapstructure:"sparse"`
 		Submodule struct {
-			Mode   string `mapstructure:"mode"` // slim 또는 full
+			Mode        string   `mapstructure:"mode"`         // slim 또는 full
+			BranchScope []string `mapstructure:"branch_scope"` // 서브모듈 브랜치 필터 리스트
 			Filter struct {
 				Default string            `mapstructure:"default"` // 서브모듈 기본 필터
 				Options map[string]string `mapstructure:"options"` // 서브모듈 필터 옵션들
@@ -150,6 +152,7 @@ prompt:
 # Git 최적화 설정
 optimize:
   mode: "full"  # slim 또는 full
+  branch_scope: []  # 브랜치 필터 리스트 (빈 리스트 = 모든 브랜치)
   filter:
     default: "1m"  # 기본 Partial Clone 필터
     options:
@@ -159,6 +162,18 @@ optimize:
       full: "100m"      # 거의 전체
   sparse:
     paths: []  # Sparse Checkout 경로 목록
+  submodule:
+    mode: "full"  # slim 또는 full
+    branch_scope: []  # 서브모듈 브랜치 필터 리스트
+    filter:
+      default: "1m"
+      options:
+        minimal: "1m"
+        basic: "25m"
+        extended: "50m"
+        full: "100m"
+    sparse:
+      paths: []
 `
 	return os.WriteFile(path, []byte(defaultConfig), 0644)
 }
@@ -204,4 +219,44 @@ func GetPromptPath(name string) (string, error) {
 // GetAll은 전체 설정을 반환합니다.
 func GetAll() map[string]interface{} {
 	return v.AllSettings()
+}
+
+// GetBranchScope는 브랜치 스코프 설정을 반환합니다.
+func GetBranchScope() []string {
+	if cfg == nil || cfg.Optimize.BranchScope == nil {
+		return []string{}
+	}
+	return cfg.Optimize.BranchScope
+}
+
+// SetBranchScope는 브랜치 스코프를 설정합니다.
+func SetBranchScope(branches []string) error {
+	v.Set("optimize.branch_scope", branches)
+	cfg.Optimize.BranchScope = branches
+	return v.WriteConfig()
+}
+
+// ClearBranchScope는 브랜치 스코프를 제거합니다.
+func ClearBranchScope() error {
+	return SetBranchScope([]string{})
+}
+
+// GetSubmoduleBranchScope는 서브모듈 브랜치 스코프 설정을 반환합니다.
+func GetSubmoduleBranchScope() []string {
+	if cfg == nil || cfg.Optimize.Submodule.BranchScope == nil {
+		return []string{}
+	}
+	return cfg.Optimize.Submodule.BranchScope
+}
+
+// SetSubmoduleBranchScope는 서브모듈 브랜치 스코프를 설정합니다.
+func SetSubmoduleBranchScope(branches []string) error {
+	v.Set("optimize.submodule.branch_scope", branches)
+	cfg.Optimize.Submodule.BranchScope = branches
+	return v.WriteConfig()
+}
+
+// ClearSubmoduleBranchScope는 서브모듈 브랜치 스코프를 제거합니다.
+func ClearSubmoduleBranchScope() error {
+	return SetSubmoduleBranchScope([]string{})
 } 

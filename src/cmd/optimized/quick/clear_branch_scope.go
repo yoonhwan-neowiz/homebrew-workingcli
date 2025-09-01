@@ -7,6 +7,7 @@ import (
 	"strings"
 	
 	"github.com/spf13/cobra"
+	"workingcli/src/config"
 	"workingcli/src/utils"
 )
 
@@ -35,7 +36,7 @@ func runClearScope() {
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// 현재 범위 설정 확인
-	currentScope := utils.GetBranchScope()
+	currentScope := config.GetBranchScope()
 	if len(currentScope) == 0 {
 		fmt.Println("\nℹ️ 현재 설정된 브랜치 범위가 없습니다")
 		return
@@ -62,8 +63,8 @@ func runClearScope() {
 }
 
 func clearBranchScope() {
-	// Git config에서 브랜치 범위 제거
-	err := utils.ClearBranchScope()
+	// Config 파일에서 브랜치 범위 제거
+	err := config.ClearBranchScope()
 	if err != nil {
 		fmt.Printf("\n⚠️ 브랜치 범위 제거 중 경고: %v\n", err)
 		// 경고만 표시하고 계속 진행

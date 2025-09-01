@@ -759,67 +759,7 @@ func GetRemoteBranches() []string {
 	return branches
 }
 
-// GetBranchScope returns current branch scope from git config with migration support
-func GetBranchScope() []string {
-	// Try new key first
-	cmd := exec.Command("git", "config", "--get", "custom.branchScope")
-	output, err := cmd.Output()
-	if err == nil && len(output) > 0 {
-		scopeStr := strings.TrimSpace(string(output))
-		if scopeStr != "" && scopeStr != "*" {
-			return strings.Split(scopeStr, ",")
-		}
-	}
 
-	// Fallback to old key for backward compatibility
-	cmd = exec.Command("git", "config", "--get", "custom.branchFilter")
-	output, err = cmd.Output()
-	if err == nil && len(output) > 0 {
-		filterStr := strings.TrimSpace(string(output))
-		if filterStr != "" && filterStr != "*" {
-			// Migrate to new key
-			exec.Command("git", "config", "custom.branchScope", filterStr).Run()
-			exec.Command("git", "config", "--unset", "custom.branchFilter").Run()
-			return strings.Split(filterStr, ",")
-		}
-	}
-
-	return []string{}
-}
-
-// GetBranchFilter is deprecated, use GetBranchScope instead
-func GetBranchFilter() []string {
-	return GetBranchScope()
-}
-
-// SetBranchScope sets branch scope in git config
-func SetBranchScope(branches []string) error {
-	scopeStr := strings.Join(branches, ",")
-	cmd := exec.Command("git", "config", "custom.branchScope", scopeStr)
-	return cmd.Run()
-}
-
-// SetBranchFilter is deprecated, use SetBranchScope instead
-func SetBranchFilter(branches []string) error {
-	return SetBranchScope(branches)
-}
-
-// ClearBranchScope removes branch scope from git config
-func ClearBranchScope() error {
-	// Remove new key
-	cmd := exec.Command("git", "config", "--unset", "custom.branchScope")
-	err := cmd.Run()
-	
-	// Also remove old key if exists (cleanup)
-	exec.Command("git", "config", "--unset", "custom.branchFilter").Run()
-	
-	return err
-}
-
-// ClearBranchFilter is deprecated, use ClearBranchScope instead
-func ClearBranchFilter() error {
-	return ClearBranchScope()
-}
 
 // CountLocalBranches returns the number of local branches
 func CountLocalBranches() int {

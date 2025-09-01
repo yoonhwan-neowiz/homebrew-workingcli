@@ -146,9 +146,9 @@ func performBackup() {
 		}
 	}
 	
-	// 브랜치 필터
-	if branchFilter := utils.GetBranchFilter(); len(branchFilter) > 0 {
-		configLines = append(configLines, fmt.Sprintf("branch-filter=%s", strings.Join(branchFilter, ",")))
+	// 브랜치 스코프
+	if branchScope := config.GetBranchScope(); len(branchScope) > 0 {
+		configLines = append(configLines, fmt.Sprintf("branch-scope=%s", strings.Join(branchScope, ",")))
 	}
 	
 	// Sparse Checkout 상태
@@ -538,9 +538,9 @@ func showCurrentConfig() {
 			fmt.Printf("   ├─ 모드: %s\n", boldStyle.Sprint(currentCfg.Optimize.Mode))
 		}
 		
-		// 브랜치 필터는 utils에서 가져옴
-		if branchFilter := utils.GetBranchFilter(); len(branchFilter) > 0 {
-			fmt.Printf("   ├─ 브랜치 필터: %s\n", boldStyle.Sprint(strings.Join(branchFilter, ", ")))
+		// 브랜치 스코프는 config에서 가져옴
+		if branchScope := config.GetBranchScope(); len(branchScope) > 0 {
+			fmt.Printf("   ├─ 브랜치 스코프: %s\n", boldStyle.Sprint(strings.Join(branchScope, ", ")))
 		}
 		
 		if len(currentCfg.Optimize.Sparse.Paths) > 0 {

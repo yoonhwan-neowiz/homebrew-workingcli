@@ -8,6 +8,7 @@ import (
 	
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"workingcli/src/config"
 	"workingcli/src/utils"
 )
 
@@ -112,10 +113,10 @@ func runCheckFilter() {
 	// 4. 커스텀 브랜치 필터 확인 (filter-branch 명령어용)
 	fmt.Println("\n🎯 커스텀 브랜치 필터:")
 	
-	branchFilter := utils.GetBranchFilter()
-	if len(branchFilter) > 0 {
+	branchScope := config.GetBranchScope()
+	if len(branchScope) > 0 {
 		warningStyle.Println("   ├─ 상태: 활성")
-		fmt.Printf("   ├─ 필터링된 브랜치: %s\n", boldStyle.Sprint(strings.Join(branchFilter, ", ")))
+		fmt.Printf("   ├─ 필터링된 브랜치: %s\n", boldStyle.Sprint(strings.Join(branchScope, ", ")))
 		
 		// 숨겨진 브랜치 계산
 		allBranches := utils.GetAllUniqueBranches()
@@ -123,7 +124,7 @@ func runCheckFilter() {
 		var hiddenBranches []string
 		
 		for _, branch := range allBranches {
-			if !utils.Contains(branchFilter, branch) {
+			if !utils.Contains(branchScope, branch) {
 				hiddenCount++
 				hiddenBranches = append(hiddenBranches, branch)
 			}
@@ -186,7 +187,7 @@ func runCheckFilter() {
 	// 6. 필터 영향 분석
 	fmt.Println("\n💡 필터 영향:")
 	
-	hasFilters := partialFilter != "" || len(branchFilter) > 0 || 
+	hasFilters := partialFilter != "" || len(branchScope) > 0 || 
 	              (sparseInfo["enabled"] != nil && sparseInfo["enabled"].(bool))
 	
 	if hasFilters {
@@ -195,8 +196,8 @@ func runCheckFilter() {
 		if partialFilter != "" {
 			fmt.Printf("   • 큰 파일이 제외됨 (%s)\n", partialFilter)
 		}
-		if len(branchFilter) > 0 {
-			fmt.Printf("   • 일부 브랜치가 숨겨짐 (%d개)\n", len(branchFilter))
+		if len(branchScope) > 0 {
+			fmt.Printf("   • 일부 브랜치가 숨겨짐 (%d개)\n", len(branchScope))
 		}
 		if sparseInfo["enabled"] != nil && sparseInfo["enabled"].(bool) {
 			fmt.Println("   • 작업 디렉토리가 부분적으로만 체크아웃됨")

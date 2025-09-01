@@ -7,6 +7,7 @@ import (
 	"strings"
 	
 	"github.com/spf13/cobra"
+	"workingcli/src/config"
 	"workingcli/src/utils"
 )
 
@@ -60,7 +61,7 @@ func runSetBranchScope(args []string) {
 	}
 
 	// 현재 범위 설정 확인
-	currentScope := utils.GetBranchScope()
+	currentScope := config.GetBranchScope()
 	if len(currentScope) > 0 {
 		fmt.Println("\n📋 현재 설정된 브랜치 범위:")
 		for _, branch := range currentScope {
@@ -137,8 +138,8 @@ func interactiveScopeMode() {
 }
 
 func applyBranchScope(branches []string) {
-	// Git config에 브랜치 범위 저장
-	err := utils.SetBranchScope(branches)
+	// Config 파일에 브랜치 범위 저장
+	err := config.SetBranchScope(branches)
 	if err != nil {
 		fmt.Printf("\n❌ 브랜치 범위 설정 실패: %v\n", err)
 		return
