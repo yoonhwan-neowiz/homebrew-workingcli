@@ -13,15 +13,26 @@ import (
 
 // NewUnshallowCmd creates the Unshallow command
 func NewUnshallowCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "unshallow",
 		Short: "히스토리 복원",
 		Long: `전체 히스토리를 복원합니다.
 과거 커밋 조회나 blame이 필요한 경우 사용합니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runUnshallow()
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 func runUnshallow() {
@@ -68,7 +79,8 @@ func runUnshallow() {
 	warningStyle.Println("\n⚠️  전체 히스토리를 다운로드합니다.")
 	warningStyle.Println("   이 작업은 시간이 오래 걸리고 디스크 사용량이 증가합니다.")
 	
-	if !utils.Confirm("계속하시겠습니까?") {
+	// unshallow는 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("계속하시겠습니까?") {
 		fmt.Println("취소되었습니다.")
 		return
 	}

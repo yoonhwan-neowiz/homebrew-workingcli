@@ -14,7 +14,9 @@ import (
 
 // NewShallowCmd creates the Shallow Depth command
 func NewShallowCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "shallow [depth]",
 		Short: "히스토리를 지정된 depth로 줄이기",
 		Long: `히스토리를 지정된 개수의 커밋만 유지하도록 줄입니다.
@@ -24,9 +26,15 @@ depth를 지정하지 않으면 기본값 1(최신 1개 커밋)로 설정됩니�
 예시:
   ga opt quick shallow        # depth=1로 설정 (기본값)
   ga opt quick shallow 5      # 최근 5개 커밋만 유지
-  ga opt quick shallow 10     # 최근 10개 커밋만 유지`,
+  ga opt quick shallow 10     # 최근 10개 커밋만 유지
+  ga opt quick shallow 5 -q   # quiet 모드로 자동 실행`,
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
+			
 			depth := 1
 			if len(args) > 0 {
 				if d, err := strconv.Atoi(args[0]); err == nil && d > 0 {
@@ -39,6 +47,11 @@ depth를 지정하지 않으면 기본값 1(최신 1개 커밋)로 설정됩니�
 			runShallow(depth)
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
                                               
@@ -108,7 +121,8 @@ func runShallow(targetDepth int) {
 	warningStyle.Println("   • 이 작업은 되돌릴 수 있습니다 (unshallow)")
 	
 	confirmMsg := fmt.Sprintf("\n히스토리를 depth=%d로 줄이시겠습니까?", targetDepth)
-	if !utils.Confirm(confirmMsg) {
+	// shallow는 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce(confirmMsg) {
 		fmt.Println("취소되었습니다.")
 		return
 	}

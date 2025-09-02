@@ -12,9 +12,33 @@ import (
 	"unicode/utf8"
 )
 
+// 전역 quiet 모드 플래그
+var quietMode bool = false
+
+// SetQuietMode quiet 모드를 설정하는 함수
+func SetQuietMode(quiet bool) {
+	quietMode = quiet
+}
+
+// IsQuietMode 현재 quiet 모드 상태를 확인하는 함수
+func IsQuietMode() bool {
+	return quietMode
+}
+
 // ConfirmWithDefault Y/N 입력을 처리하는 함수
 // defaultValue가 true면 Y가 기본값, false면 N이 기본값
+// quiet 모드에서는 defaultValue를 자동으로 반환
 func ConfirmWithDefault(prompt string, defaultValue bool) bool {
+	// quiet 모드에서는 기본값을 자동으로 반환
+	if quietMode {
+		if defaultValue {
+			fmt.Printf("%s (자동 선택: Y)\n", prompt)
+		} else {
+			fmt.Printf("%s (자동 선택: N)\n", prompt)
+		}
+		return defaultValue
+	}
+	
 	reader := bufio.NewReader(os.Stdin)
 	defaultStr := "Y/n"
 	if !defaultValue {
@@ -33,12 +57,29 @@ func ConfirmWithDefault(prompt string, defaultValue bool) bool {
 }
 
 // Confirm Y/N 입력을 처리하는 함수 (기본값 없음)
+// quiet 모드에서는 파괴적인 작업에 대해 false를 반환 (안전 우선)
 func Confirm(prompt string) bool {
+	// quiet 모드에서는 안전을 위해 false 반환
+	if quietMode {
+		fmt.Printf("%s (자동 선택: N - quiet 모드에서는 안전을 위해 거부)\n", prompt)
+		return false
+	}
+	
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("%s (y/n): ", prompt)
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(strings.ToLower(input))
 	return input == "y" || input == "yes"
+}
+
+// ConfirmForce quiet 모드에서도 강제로 true를 반환하는 확인 함수
+// 안전한 작업에 대해서만 사용
+func ConfirmForce(prompt string) bool {
+	if quietMode {
+		fmt.Printf("%s (자동 선택: Y)\n", prompt)
+		return true
+	}
+	return Confirm(prompt)
 }
 
 // UnescapeGitPath Git 출력에서 이스케이프된 한글 파일명을 원래 문자열로 변환

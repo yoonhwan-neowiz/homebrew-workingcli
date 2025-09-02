@@ -14,7 +14,9 @@ import (
 
 // NewToFullCmd creates the To FULL restoration command for submodules
 func NewToFullCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "to-full",
 		Short: "서브모듈을 FULL 모드로 복원 (recursive)",
 		Long: `모든 서브모듈을 FULL 모드로 복원합니다 (recursive).
@@ -29,9 +31,18 @@ func NewToFullCmd() *cobra.Command {
 
 참고: 네트워크를 통해 모든 객체를 다운로드하므로 시간과 대역폭이 소요됩니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runToFull()
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 // runToFull restores all submodules to FULL mode in parallel
@@ -48,7 +59,8 @@ func runToFull() {
 	fmt.Println("⚠️ 주의: 모든 객체를 다운로드하므로 시간과 네트워크 대역폭이 소요됩니다.")
 	fmt.Println("⚠️ 디스크 사용량이 크게 증가할 수 있습니다.")
 
-	if !utils.ConfirmWithDefault("계속하시겠습니까?", true) {
+	// FULL 복원은 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("계속하시겠습니까?") {
 		fmt.Println("❌ 작업이 취소되었습니다.")
 		return
 	}

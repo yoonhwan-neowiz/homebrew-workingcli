@@ -14,6 +14,7 @@ import (
 // NewExpandFilterCmd creates the submodule Expand Filter removal command
 func NewExpandFilterCmd() *cobra.Command {
 	var jobs int
+	var quietMode bool
 	
 	cmd := &cobra.Command{
 		Use:   "expand-filter",
@@ -23,11 +24,16 @@ func NewExpandFilterCmd() *cobra.Command {
 
 이 작업은 각 서브모듈의 디스크 사용량을 크게 증가시킬 수 있습니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			executeSubmoduleExpandFilter(jobs)
 		},
 	}
 	
 	cmd.Flags().IntVar(&jobs, "jobs", 4, "병렬 처리할 작업 수")
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
 	
 	return cmd
 }
@@ -110,7 +116,8 @@ func executeSubmoduleExpandFilter(jobs int) {
 	fmt.Printf("\n⚠️  경고: %d개 서브모듈의 필터를 제거합니다.\n", totalFilteredCount)
 	fmt.Println("   모든 대용량 파일이 다운로드되어 디스크 사용량이 크게 증가할 수 있습니다.")
 	
-	if !utils.ConfirmWithDefault("계속하시겠습니까?", false) {
+	// Partial Clone 필터 제거는 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("계속하시겠습니까?") {
 		fmt.Println("\n❌ 작업이 취소되었습니다.")
 		return
 	}

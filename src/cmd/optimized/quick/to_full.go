@@ -12,16 +12,27 @@ import (
 
 // NewToFullCmd creates the To FULL restoration command
 func NewToFullCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "to-full",
 		Short: "FULL 모드로 복원",
 		Long: `저장소를 FULL 모드로 복원합니다.
 모든 최적화를 해제하고 전체 히스토리와 파일을 다운로드합니다.
 주의: 대량의 디스크 공간이 필요할 수 있습니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runToFull()
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 func runToFull() {
@@ -54,7 +65,8 @@ func runToFull() {
 	fmt.Println("• 대량의 디스크 공간이 필요할 수 있습니다")
 	fmt.Println("• 네트워크 속도에 따라 시간이 오래 걸릴 수 있습니다")
 	
-	if !utils.ConfirmWithDefault("\n계속하시겠습니까?", false) {
+	// FULL 복원은 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("\n계속하시겠습니까?") {
 		fmt.Println("❌ 취소되었습니다.")
 		return
 	}

@@ -1,11 +1,8 @@
 package quick
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
-	"strings"
 	
 	"github.com/spf13/cobra"
 	"workingcli/src/config"
@@ -15,6 +12,7 @@ import (
 // NewClearBranchScopeCmd creates the Clear Branch Scope command
 func NewClearBranchScopeCmd() *cobra.Command {
 	var fetchFlag bool
+	var quietMode bool
 	
 	cmd := &cobra.Command{
 		Use:     "clear-branch-scope",
@@ -23,11 +21,16 @@ func NewClearBranchScopeCmd() *cobra.Command {
 		Long: `브랜치 범위를 제거하여 모든 로컬/원격 브랜치가 표시되도록 합니다.
 set-branch-scope로 설정한 범위를 초기화합니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runClearScope(fetchFlag)
 		},
 	}
 	
 	cmd.Flags().BoolVarP(&fetchFlag, "fetch", "f", false, "원격 브랜치를 다시 가져옴")
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
 	
 	return cmd
 }
@@ -50,12 +53,8 @@ func runClearScope(fetchFlag bool) {
 	}
 
 	// 사용자 확인
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("\n브랜치 범위를 제거하시겠습니까? (y/N): ")
-	answer, _ := reader.ReadString('\n')
-	answer = strings.TrimSpace(strings.ToLower(answer))
-
-	if answer != "y" && answer != "yes" {
+	// 브랜치 범위 제거는 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("\n브랜치 범위를 제거하시겠습니까?") {
 		fmt.Println("\n✨ 작업이 취소되었습니다")
 		return
 	}

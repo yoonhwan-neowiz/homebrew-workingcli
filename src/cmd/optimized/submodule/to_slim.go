@@ -15,7 +15,9 @@ import (
 
 // NewToSlimCmd creates the To SLIM conversion command for submodules
 func NewToSlimCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "to-slim",
 		Short: "서브모듈을 SLIM 모드로 전환 (recursive)",
 		Long: `모든 서브모듈을 SLIM 모드로 전환합니다 (recursive).
@@ -28,9 +30,18 @@ func NewToSlimCmd() *cobra.Command {
 
 참고: 대용량 저장소의 경우 시간이 소요될 수 있습니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runToSlim()
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 // runToSlim converts all submodules to SLIM mode in parallel
@@ -46,7 +57,8 @@ func runToSlim() {
 	fmt.Println("🚀 모든 서브모듈을 SLIM 모드로 전환합니다...")
 	fmt.Println("⚠️ 주의: 일부 서브모듈은 시간이 걸릴 수 있습니다.")
 
-	if !utils.ConfirmWithDefault("계속하시겠습니까?", true) {
+	// SLIM 전환은 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("계속하시겠습니까?") {
 		fmt.Println("❌ 작업이 취소되었습니다.")
 		return
 	}

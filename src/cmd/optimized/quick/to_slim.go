@@ -15,7 +15,9 @@ import (
 
 // NewToSlimCmd creates the To SLIM conversion command
 func NewToSlimCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "to-slim",
 		Short: "SLIM 모드로 전환 (103GB → 30MB)",
 		Long: `저장소를 SLIM 모드로 전환합니다.
@@ -37,9 +39,18 @@ func NewToSlimCmd() *cobra.Command {
 ⚠️ 경고: 백업을 먼저 수행하세요!
 예상 시간: 약 5-10분 (네트워크 속도에 따라 다름)`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runToSlim()
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 // runToSlim executes the SLIM mode conversion
@@ -58,36 +69,41 @@ func runToSlim() {
 	
 	// 작업 중인 변경사항 확인
 	if hasUncommittedChanges() {
-		fmt.Println("\n⚠️  작업 중인 변경사항이 있습니다!")
-		fmt.Println("다음 중 하나를 선택하세요:")
-		fmt.Println("1. git stash로 임시 저장 후 진행")
-		fmt.Println("2. 커밋 후 진행")
-		fmt.Println("3. 취소")
-		
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("\n선택 (1/2/3): ")
-		choice, _ := reader.ReadString('\n')
-		choice = strings.TrimSpace(choice)
-		
-		switch choice {
-		case "1":
-			fmt.Println("📦 변경사항을 stash에 저장합니다...")
+		if utils.IsQuietMode() {
+			// quiet 모드에서는 자동으로 stash 선택
+			fmt.Println("\n⚠️  작업 중인 변경사항이 있습니다!")
+			fmt.Println("📦 변경사항을 stash에 저장합니다... (자동 선택)")
 			runGitCommand("stash", "push", "-m", "Auto-stash before SLIM conversion")
-		case "2":
-			fmt.Println("커밋을 먼저 수행하고 다시 실행해주세요.")
-			return
-		default:
-			fmt.Println("취소되었습니다.")
-			return
+		} else {
+			fmt.Println("\n⚠️  작업 중인 변경사항이 있습니다!")
+			fmt.Println("다음 중 하나를 선택하세요:")
+			fmt.Println("1. git stash로 임시 저장 후 진행")
+			fmt.Println("2. 커밋 후 진행")
+			fmt.Println("3. 취소")
+			
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Print("\n선택 (1/2/3): ")
+			choice, _ := reader.ReadString('\n')
+			choice = strings.TrimSpace(choice)
+			
+			switch choice {
+			case "1":
+				fmt.Println("📦 변경사항을 stash에 저장합니다...")
+				runGitCommand("stash", "push", "-m", "Auto-stash before SLIM conversion")
+			case "2":
+				fmt.Println("커밋을 먼저 수행하고 다시 실행해주세요.")
+				return
+			default:
+				fmt.Println("취소되었습니다.")
+				return
+			}
 		}
 	}
 	
 	// 백업 권장
 	fmt.Println("\n⚠️  경고: SLIM 전환은 저장소를 크게 변경합니다.")
-	fmt.Print("계속하시겠습니까? (y/N): ")
-	reader := bufio.NewReader(os.Stdin)
-	confirm, _ := reader.ReadString('\n')
-	if strings.ToLower(strings.TrimSpace(confirm)) != "y" {
+	// SLIM 전환은 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("계속하시겠습니까?") {
 		fmt.Println("취소되었습니다.")
 		return
 	}
@@ -180,9 +196,8 @@ func runToSlim() {
 	
 	// stash 복원 여부 확인
 	if hasStash() {
-		fmt.Print("\n📦 이전에 저장한 변경사항을 복원하시겠습니까? (y/N): ")
-		restore, _ := reader.ReadString('\n')
-		if strings.ToLower(strings.TrimSpace(restore)) == "y" {
+		// quiet 모드에서는 자동으로 stash 복원
+		if utils.ConfirmForce("\n📦 이전에 저장한 변경사항을 복원하시겠습니까?") {
 			runGitCommand("stash", "pop")
 			fmt.Println("✅ 변경사항이 복원되었습니다.")
 		}

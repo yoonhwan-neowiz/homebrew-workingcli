@@ -12,7 +12,9 @@ import (
 
 // NewUnshallowCmd creates the Unshallow Submodules command
 func NewUnshallowCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "unshallow",
 		Short: "서브모듈 히스토리 복원 (recursive)",
 		Long: `모든 서브모듈의 전체 히스토리를 복원합니다 (recursive).
@@ -24,9 +26,18 @@ Shallow 상태의 서브모듈을 완전한 저장소로 변환합니다.
 
 ⚠️ 주의: 서브모듈 크기에 따라 상당한 디스크 공간이 필요할 수 있습니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runUnshallow()
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 func runUnshallow() {
@@ -42,7 +53,8 @@ func runUnshallow() {
 	fmt.Println("⚠️ 주의: 대용량 저장소의 경우 시간이 오래 걸릴 수 있습니다.\n")
 
 	// 사용자 확인
-	if !utils.ConfirmWithDefault("계속하시겠습니까?", true) {
+	// unshallow는 안전한 작업이므로 quiet 모드에서 자동 수락
+	if !utils.ConfirmForce("계속하시겠습니까?") {
 		fmt.Println("❌ 작업이 취소되었습니다.")
 		return
 	}
