@@ -134,30 +134,39 @@ func runShallow(targetDepth int) {
 	// 6. Shallow 변환 실행
 	fmt.Printf("\n🔄 히스토리를 depth=%d로 조정 중... ", targetDepth)
 	
-	// git pull --depth=N 실행
+	// git fetch --depth=N을 먼저 시도 (더 안전한 방법)
 	depthStr := strconv.Itoa(targetDepth)
-	cmd := exec.Command("git", "pull", "--depth="+depthStr)
+	cmd := exec.Command("git", "fetch", "--depth="+depthStr)
 	output, err := cmd.CombinedOutput()
 	
 	if err != nil {
-		// 에러 처리
-		if strings.Contains(string(output), "shallow") {
-			// 이미 shallow인 경우 다른 방법 시도
-			fmt.Print("(대체 방법 시도) ")
-			
-			// git fetch --depth=N으로 재시도
-			cmd = exec.Command("git", "fetch", "--depth="+depthStr)
-			output, err = cmd.CombinedOutput()
-			
-			if err != nil {
+		// fetch 실패 시 pull with --allow-unrelated-histories 시도
+		fmt.Print("(대체 방법 시도) ")
+		cmd = exec.Command("git", "pull", "--depth="+depthStr, "--allow-unrelated-histories")
+		output, err = cmd.CombinedOutput()
+		
+		if err != nil {
+			// 그래도 실패하면 fetch --unshallow 후 다시 시도
+			if strings.Contains(string(output), "unrelated histories") || strings.Contains(string(output), "shallow") {
+				fmt.Print("(추가 대체 방법 시도) ")
+				
+				// 현재 브랜치 정보 가져오기
+				branch := utils.GetCurrentBranch()
+				
+				// git fetch origin branch --depth=N
+				cmd = exec.Command("git", "fetch", "origin", branch, "--depth="+depthStr)
+				output, err = cmd.CombinedOutput()
+				
+				if err != nil {
+					errorStyle.Println("실패")
+					errorStyle.Printf("❌ 오류: %s\n", strings.TrimSpace(string(output)))
+					os.Exit(1)
+				}
+			} else {
 				errorStyle.Println("실패")
 				errorStyle.Printf("❌ 오류: %s\n", strings.TrimSpace(string(output)))
 				os.Exit(1)
 			}
-		} else {
-			errorStyle.Println("실패")
-			errorStyle.Printf("❌ 오류: %s\n", strings.TrimSpace(string(output)))
-			os.Exit(1)
 		}
 	}
 	

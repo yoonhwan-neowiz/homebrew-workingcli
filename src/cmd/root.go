@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"workingcli/src/cmd/git"
@@ -52,14 +53,16 @@ func Execute() {
 		if len(os.Args) > 1 {
 			if gitErr := HandleGitFallback(os.Args[1:]); gitErr != nil {
 				// Git fallback도 실패한 경우
-				fmt.Printf("❌ Git 명령 실행 실패: %v\n", gitErr)
+				fmt.Printf("❌ 실행 실패한 명령어: %s\n", strings.Join(os.Args, " "))
+				fmt.Printf("   Git 명령 실행 실패: %v\n", gitErr)
 				fmt.Printf("   (원래 오류: %v)\n", err)
 				os.Exit(1)
 			}
 			// Git fallback 성공 시 정상 종료
 		} else {
 			// 인자가 없는 경우 cobra 에러 출력
-			fmt.Printf("❌ 오류: %v\n", err)
+			fmt.Printf("❌ 실행 실패한 명령어: %s\n", strings.Join(os.Args, " "))
+			fmt.Printf("   오류: %v\n", err)
 			os.Exit(1)
 		}
 	}

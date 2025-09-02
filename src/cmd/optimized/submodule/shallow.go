@@ -13,7 +13,9 @@ import (
 
 // NewShallowCmd creates the Shallow Submodules command
 func NewShallowCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:   "shallow [depth]",
 		Short: "서브모듈을 Shallow Clone으로 변환 (recursive)",
 		Long: `모든 서브모듈을 Shallow Clone으로 변환합니다 (recursive).
@@ -23,12 +25,22 @@ depth를 지정하지 않으면 기본값 1(최신 1개 커밋)로 설정됩니�
 예시:
   ga opt submodule shallow        # depth=1로 설정 (기본값)
   ga opt submodule shallow 5      # 최근 5개 커밋만 유지
-  ga opt submodule shallow 10     # 최근 10개 커밋만 유지`,
+  ga opt submodule shallow 10     # 최근 10개 커밋만 유지
+  ga opt submodule shallow 5 -q   # quiet 모드로 자동 실행`,
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runShallow(args)
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 func runShallow(args []string) {
@@ -79,20 +91,34 @@ func runShallow(args []string) {
 				return nil // 성공으로 처리
 			}
 			
-			// depth 업데이트
-			pullCmd := exec.Command("git", "pull", fmt.Sprintf("--depth=%d", depth))
-			if err := pullCmd.Run(); err != nil {
-				return fmt.Errorf("Shallow 업데이트 실패: %v", err)
+			// depth 업데이트 - fetch를 먼저 시도
+			fetchCmd := exec.Command("git", "fetch", fmt.Sprintf("--depth=%d", depth))
+			if err := fetchCmd.Run(); err != nil {
+				// fetch 실패 시 pull with --allow-unrelated-histories
+				pullCmd := exec.Command("git", "pull", fmt.Sprintf("--depth=%d", depth), "--allow-unrelated-histories")
+				if err := pullCmd.Run(); err != nil {
+					return fmt.Errorf("Shallow 업데이트 실패: %v", err)
+				}
 			}
 			fmt.Printf("✅ %s: Depth를 %d로 변경\n", path, depth)
 		} else {
-			// shallow로 변환
-			pullCmd := exec.Command("git", "pull", fmt.Sprintf("--depth=%d", depth))
-			if err := pullCmd.Run(); err != nil {
-				// 실패 시 fetch 시도
-				fetchCmd := exec.Command("git", "fetch", fmt.Sprintf("--depth=%d", depth))
-				if err := fetchCmd.Run(); err != nil {
-					return fmt.Errorf("Shallow 변환 실패: %v", err)
+			// shallow로 변환 - fetch를 먼저 시도 (더 안전)
+			fetchCmd := exec.Command("git", "fetch", fmt.Sprintf("--depth=%d", depth))
+			if err := fetchCmd.Run(); err != nil {
+				// fetch 실패 시 pull with --allow-unrelated-histories
+				pullCmd := exec.Command("git", "pull", fmt.Sprintf("--depth=%d", depth), "--allow-unrelated-histories")
+				if err := pullCmd.Run(); err != nil {
+					// 그래도 실패하면 origin과 현재 브랜치를 명시적으로 지정
+					branch := "HEAD"
+					branchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+					if branchOutput, err := branchCmd.Output(); err == nil {
+						branch = strings.TrimSpace(string(branchOutput))
+					}
+					
+					fetchOriginCmd := exec.Command("git", "fetch", "origin", branch, fmt.Sprintf("--depth=%d", depth))
+					if err := fetchOriginCmd.Run(); err != nil {
+						return fmt.Errorf("Shallow 변환 실패: %v", err)
+					}
 				}
 			}
 			

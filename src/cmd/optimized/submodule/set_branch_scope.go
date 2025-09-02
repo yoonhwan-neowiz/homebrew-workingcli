@@ -14,7 +14,9 @@ import (
 
 // NewSetBranchScopeCmd creates the submodule Set Branch Scope command
 func NewSetBranchScopeCmd() *cobra.Command {
-	return &cobra.Command{
+	var quietMode bool
+	
+	cmd := &cobra.Command{
 		Use:     "set-branch-scope [브랜치1] [브랜치2] ...",
 		Aliases: []string{"sbs", "scope", "branch-limit"},
 		Short:   "서브모듈 브랜치 범위 설정 (특정 브랜치만 표시)",
@@ -24,11 +26,21 @@ func NewSetBranchScopeCmd() *cobra.Command {
 사용 예시:
   ga opt submodule set-branch-scope                # 대화형 모드
   ga opt submodule sbs main develop                # 짧은 별칭 사용
-  ga opt submodule scope feature/test              # feature 브랜치만 표시`,
+  ga opt submodule scope feature/test              # feature 브랜치만 표시
+  ga opt submodule sbs main -q                     # quiet 모드로 자동 실행`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// quiet 모드 설정
+			if quietMode {
+				utils.SetQuietMode(true)
+			}
 			runSubmoduleSetBranchScope(args)
 		},
 	}
+	
+	// -q 플래그 추가
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "자동 실행 모드 (확인 없음)")
+	
+	return cmd
 }
 
 func runSubmoduleSetBranchScope(args []string) {
