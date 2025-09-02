@@ -22,9 +22,9 @@ depth를 지정하지 않으면 기본값 1(최신 1개 커밋)로 설정됩니�
 과거 히스토리가 필요 없는 경우 디스크 공간을 절약할 수 있습니다.
 
 예시:
-  ga opt advanced shallow        # depth=1로 설정 (기본값)
-  ga opt advanced shallow 5      # 최근 5개 커밋만 유지
-  ga opt advanced shallow 10     # 최근 10개 커밋만 유지`,
+  ga opt quick shallow        # depth=1로 설정 (기본값)
+  ga opt quick shallow 5      # 최근 5개 커밋만 유지
+  ga opt quick shallow 10     # 최근 10개 커밋만 유지`,
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			depth := 1
@@ -41,6 +41,7 @@ depth를 지정하지 않으면 기본값 1(최신 1개 커밋)로 설정됩니�
 	}
 }
 
+                                              
 func runShallow(targetDepth int) {
 	// 색상 설정
 	titleStyle := color.New(color.FgCyan, color.Bold)
