@@ -31,11 +31,6 @@ func NewSetBranchScopeCmd() *cobra.Command {
 }
 
 func runSetBranchScope(args []string) {
-	// Git 저장소 확인
-	if !utils.IsGitRepository() {
-		fmt.Println("❌ Git 저장소가 아닙니다")
-		return
-	}
 
 	fmt.Println("\n🔧 브랜치 범위 설정")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -143,6 +138,11 @@ func applyBranchScope(branches []string) {
 	if err != nil {
 		fmt.Printf("\n❌ 브랜치 범위 설정 실패: %v\n", err)
 		return
+	}
+	
+	// Git fetch refspec 설정으로 실제 브랜치 필터링 적용
+	if err := utils.SetFetchRefspec(branches); err != nil {
+		fmt.Printf("\n⚠️ fetch refspec 설정 실패: %v\n", err)
 	}
 
 	fmt.Println("\n✅ 브랜치 범위가 설정되었습니다")

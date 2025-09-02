@@ -7,24 +7,31 @@ import (
 	"strings"
 	
 	"github.com/spf13/cobra"
+	"workingcli/src/config"
 	"workingcli/src/utils"
 )
 
 // NewClearBranchScopeCmd creates the submodule Clear Branch Scope command
 func NewClearBranchScopeCmd() *cobra.Command {
-	return &cobra.Command{
+	var fetchFlag bool
+	
+	cmd := &cobra.Command{
 		Use:     "clear-branch-scope",
 		Aliases: []string{"cbs", "unscope", "show-all"},
 		Short:   "서브모듈 브랜치 범위 제거 (모든 브랜치 표시)",
 		Long: `서브모듈의 브랜치 범위를 제거하여 모든 로컬/원격 브랜치가 표시되도록 합니다.
 set-branch-scope로 설정한 범위를 초기화합니다.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runSubmoduleClearScope()
+			runSubmoduleClearScope(fetchFlag)
 		},
 	}
+	
+	cmd.Flags().BoolVarP(&fetchFlag, "fetch", "f", false, "원격 브랜치를 다시 가져옴")
+	
+	return cmd
 }
 
-func runSubmoduleClearScope() {
+func runSubmoduleClearScope(fetchFlag bool) {
 	fmt.Println("\n🔧 서브모듈 브랜치 범위 제거")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	
@@ -48,40 +55,16 @@ func runSubmoduleClearScope() {
 		return
 	}
 	
-	// 현재 범위가 설정된 서브모듈 찾기
-	var hasScope bool
-	var filteredSubmodules []string
-	filterInfo := make(map[string][]string)
-	
-	for _, path := range submodulePaths {
-		if path == "" {
-			continue
-		}
-		
-		configKey := fmt.Sprintf("submodule.%s.branchScope", path)
-		getCmd := exec.Command("git", "config", "--get", configKey)
-		output, err := getCmd.Output()
-		
-		if err == nil && len(output) > 0 {
-			branchList := strings.TrimSpace(string(output))
-			if branchList != "" {
-				branches := strings.Split(branchList, ",")
-				filterInfo[path] = branches
-				filteredSubmodules = append(filteredSubmodules, path)
-				hasScope = true
-			}
-		}
-	}
-	
-	if !hasScope {
+	// config에서 서브모듈 branch_scope 확인
+	submoduleScope := config.GetSubmoduleBranchScope()
+	if len(submoduleScope) == 0 {
 		fmt.Println("\nℹ️  현재 설정된 브랜치 범위가 없습니다")
 		return
 	}
 	
-	fmt.Println("\n📋 현재 필터링된 서브모듈:")
-	for _, path := range filteredSubmodules {
-		branches := filterInfo[path]
-		fmt.Printf("   • %s (필터: %s)\n", path, strings.Join(branches, ", "))
+	fmt.Println("\n📋 현재 설정된 브랜치 범위:")
+	for _, branch := range submoduleScope {
+		fmt.Printf("   • %s\n", branch)
 	}
 	
 	// 사용자 확인
@@ -91,33 +74,48 @@ func runSubmoduleClearScope() {
 	}
 	
 	// 필터 제거
-	clearSubmoduleBranchFilters(filteredSubmodules)
+	clearSubmoduleBranchFilters(submodulePaths, fetchFlag)
 }
 
-func clearSubmoduleBranchFilters(submodules []string) {
+func clearSubmoduleBranchFilters(submodulePaths []string, fetchFlag bool) {
 	successCount := 0
 	failCount := 0
 	
-	for _, path := range submodules {
-		// 메인 저장소의 서브모듈 설정 제거
-		configKey := fmt.Sprintf("submodule.%s.branchScope", path)
-		unsetCmd := exec.Command("git", "config", "--unset", configKey)
-		if err := unsetCmd.Run(); err != nil {
-			// Exit code 5는 키가 없는 경우 (이미 제거됨)
-			if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 5 {
-				// 이미 제거됨 - 성공으로 처리
-				successCount++
-			} else {
-				fmt.Printf("\n⚠️  %s 필터 제거 중 경고: %v\n", path, err)
-				failCount++
-			}
+	// config에서 서브모듈 branch_scope 제거
+	if err := config.ClearSubmoduleBranchScope(); err != nil {
+		fmt.Printf("⚠️ config.yaml 서브모듈 브랜치 스코프 제거 실패: %v\n", err)
+	}
+	
+	// 각 서브모듈의 fetch refspec 복원
+	for _, path := range submodulePaths {
+		if path == "" {
+			continue
+		}
+		
+		// 서브모듈의 fetch refspec 복원
+		if err := utils.RestoreFetchRefspecForSubmodule(path); err != nil {
+			fmt.Printf("⚠️  %s fetch refspec 복원 실패: %v\n", path, err)
+			failCount++
 		} else {
 			successCount++
 		}
-		
-		// 서브모듈 디렉토리의 설정도 제거
-		submoduleUnsetCmd := exec.Command("git", "-C", path, "config", "--unset", "workingcli.branchScope")
-		submoduleUnsetCmd.Run() // 실패해도 무시 (서브모듈 내부 설정은 선택적)
+	}
+	
+	// fetch 플래그가 설정된 경우에만 각 서브모듈의 원격 브랜치 가져오기
+	if fetchFlag {
+		fmt.Println("\n🔄 서브모듈의 원격 브랜치를 가져오는 중...")
+		for _, path := range submodulePaths {
+			if path == "" {
+				continue
+			}
+			
+			cmd := exec.Command("git", "-C", path, "fetch", "origin", "--prune")
+			if err := cmd.Run(); err != nil {
+				fmt.Printf("⚠️  %s: 원격 브랜치 가져오기 실패: %v\n", path, err)
+			} else {
+				fmt.Printf("✅  %s: 원격 브랜치를 성공적으로 가져왔습니다\n", path)
+			}
+		}
 	}
 	
 	fmt.Println("\n✅ 서브모듈 브랜치 범위가 제거되었습니다")

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // IsGitRepository checks if current directory is a git repository
@@ -955,4 +956,243 @@ func ExecuteOnSubmodulesParallel(operation SubmoduleOperation, jobs int, recursi
 	}
 
 	return successCount, failCount, nil
+}
+
+// BackupFetchRefspec backs up current fetch refspec configuration
+func BackupFetchRefspec() (string, error) {
+	// 백업 디렉토리 생성
+	timestamp := time.Now().Format("20060102-150405")
+	backupDir := filepath.Join(".gaconfig", "backups", timestamp)
+	if err := os.MkdirAll(backupDir, 0755); err != nil {
+		return "", fmt.Errorf("백업 디렉토리 생성 실패: %v", err)
+	}
+
+	// 현재 fetch refspec 가져오기
+	cmd := exec.Command("git", "config", "--get-all", "remote.origin.fetch")
+	output, err := cmd.Output()
+	if err != nil {
+		// refspec이 없는 경우도 정상 케이스
+		return backupDir, nil
+	}
+
+	// 백업 파일에 저장
+	backupFile := filepath.Join(backupDir, "fetch-refspec-backup.txt")
+	if err := os.WriteFile(backupFile, output, 0644); err != nil {
+		return "", fmt.Errorf("백업 파일 저장 실패: %v", err)
+	}
+
+	return backupDir, nil
+}
+
+// GetLatestBackupDir returns the most recent backup directory
+func GetLatestBackupDir() (string, error) {
+	backupsDir := filepath.Join(".gaconfig", "backups")
+	entries, err := os.ReadDir(backupsDir)
+	if err != nil {
+		return "", fmt.Errorf("백업 디렉토리 읽기 실패: %v", err)
+	}
+
+	var latestDir string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if latestDir == "" || entry.Name() > latestDir {
+				latestDir = entry.Name()
+			}
+		}
+	}
+
+	if latestDir == "" {
+		return "", fmt.Errorf("백업을 찾을 수 없습니다")
+	}
+
+	return filepath.Join(backupsDir, latestDir), nil
+}
+
+// SetFetchRefspec sets fetch refspec for specified branches
+func SetFetchRefspec(branches []string) error {
+	if len(branches) == 0 {
+		return fmt.Errorf("브랜치 목록이 비어있습니다")
+	}
+
+	// 백업 먼저 수행
+	_, err := BackupFetchRefspec()
+	if err != nil {
+		return fmt.Errorf("fetch refspec 백업 실패: %v", err)
+	}
+
+	// 기존 fetch refspec 모두 제거
+	cmd := exec.Command("git", "config", "--unset-all", "remote.origin.fetch")
+	cmd.Run() // 에러 무시 (기존 설정이 없을 수 있음)
+
+	// 새로운 fetch refspec 설정
+	for _, branch := range branches {
+		branch = strings.TrimSpace(branch)
+		if branch == "" {
+			continue
+		}
+		refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", branch, branch)
+		cmd = exec.Command("git", "config", "--add", "remote.origin.fetch", refspec)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("fetch refspec 설정 실패 (%s): %v", branch, err)
+		}
+	}
+
+	// 기존 원격 브랜치 참조 정리 - 설정된 브랜치 외의 모든 원격 브랜치 삭제
+	cleanupRemoteBranches(branches)
+
+	return nil
+}
+
+// cleanupRemoteBranches removes remote branches that are not in the specified list
+func cleanupRemoteBranches(keepBranches []string) error {
+	// 현재 원격 브랜치 목록 가져오기
+	cmd := exec.Command("git", "branch", "-r", "--format=%(refname:short)")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("원격 브랜치 목록 조회 실패: %v", err)
+	}
+
+	// 유지할 브랜치 맵 생성
+	keepMap := make(map[string]bool)
+	for _, branch := range keepBranches {
+		keepMap[fmt.Sprintf("origin/%s", branch)] = true
+	}
+	keepMap["origin/HEAD"] = true // HEAD는 항상 유지
+
+	// 삭제할 브랜치 처리
+	remoteBranches := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for _, remoteBranch := range remoteBranches {
+		remoteBranch = strings.TrimSpace(remoteBranch)
+		if remoteBranch == "" || keepMap[remoteBranch] {
+			continue
+		}
+
+		// refs/remotes/로 시작하는 전체 ref 경로로 삭제
+		fullRef := fmt.Sprintf("refs/remotes/%s", remoteBranch)
+		cmd = exec.Command("git", "update-ref", "-d", fullRef)
+		cmd.Run() // 에러 무시
+	}
+
+	return nil
+}
+
+// RestoreFetchRefspec restores fetch refspec from backup or sets default
+func RestoreFetchRefspec() error {
+	// 가장 최근 백업 찾기
+	backupDir, err := GetLatestBackupDir()
+	
+	if err == nil {
+		// 백업 파일에서 복원
+		backupFile := filepath.Join(backupDir, "fetch-refspec-backup.txt")
+		
+		if content, err := os.ReadFile(backupFile); err == nil && len(content) > 0 {
+			// 기존 설정 제거
+			cmd := exec.Command("git", "config", "--unset-all", "remote.origin.fetch")
+			cmd.Run()
+			
+			// 백업에서 복원
+			lines := strings.Split(strings.TrimSpace(string(content)), "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line != "" {
+					cmd = exec.Command("git", "config", "--add", "remote.origin.fetch", line)
+					if err := cmd.Run(); err != nil {
+						return fmt.Errorf("fetch refspec 복원 실패: %v", err)
+					}
+				}
+			}
+			
+			return nil
+		}
+	}
+	
+	// 백업이 없으면 기본값으로 복원
+	cmd := exec.Command("git", "config", "--unset-all", "remote.origin.fetch")
+	cmd.Run()
+	
+	cmd = exec.Command("git", "config", "--add", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("기본 fetch refspec 설정 실패: %v", err)
+	}
+	
+	return nil
+}
+
+// SetFetchRefspecForSubmodule sets fetch refspec for a submodule
+func SetFetchRefspecForSubmodule(submodulePath string, branches []string) error {
+	if len(branches) == 0 {
+		return fmt.Errorf("브랜치 목록이 비어있습니다")
+	}
+
+	// 기존 fetch refspec 모두 제거
+	cmd := exec.Command("git", "-C", submodulePath, "config", "--unset-all", "remote.origin.fetch")
+	cmd.Run() // 에러 무시 (기존 설정이 없을 수 있음)
+
+	// 새로운 fetch refspec 설정
+	for _, branch := range branches {
+		branch = strings.TrimSpace(branch)
+		if branch == "" {
+			continue
+		}
+		refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", branch, branch)
+		cmd = exec.Command("git", "-C", submodulePath, "config", "--add", "remote.origin.fetch", refspec)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("fetch refspec 설정 실패 (%s): %v", branch, err)
+		}
+	}
+
+	// 기존 원격 브랜치 참조 정리 - 설정된 브랜치 외의 모든 원격 브랜치 삭제
+	if err := cleanupRemoteBranchesForSubmodule(submodulePath, branches); err != nil {
+		return fmt.Errorf("원격 브랜치 정리 실패: %v", err)
+	}
+
+	return nil
+}
+
+// cleanupRemoteBranchesForSubmodule removes remote branches that are not in the specified list for a submodule
+func cleanupRemoteBranchesForSubmodule(submodulePath string, keepBranches []string) error {
+	// 현재 원격 브랜치 목록 가져오기
+	cmd := exec.Command("git", "-C", submodulePath, "branch", "-r", "--format=%(refname:short)")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("원격 브랜치 목록 조회 실패: %v", err)
+	}
+
+	// 유지할 브랜치 맵 생성
+	keepMap := make(map[string]bool)
+	for _, branch := range keepBranches {
+		keepMap[fmt.Sprintf("origin/%s", branch)] = true
+	}
+	keepMap["origin/HEAD"] = true // HEAD는 항상 유지
+
+	// 삭제할 브랜치 처리
+	remoteBranches := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for _, remoteBranch := range remoteBranches {
+		remoteBranch = strings.TrimSpace(remoteBranch)
+		if remoteBranch == "" || keepMap[remoteBranch] {
+			continue
+		}
+
+		// refs/remotes/로 시작하는 전체 ref 경로로 삭제
+		fullRef := fmt.Sprintf("refs/remotes/%s", remoteBranch)
+		cmd = exec.Command("git", "-C", submodulePath, "update-ref", "-d", fullRef)
+		cmd.Run() // 에러 무시
+	}
+
+	return nil
+}
+
+// RestoreFetchRefspecForSubmodule restores fetch refspec for a submodule
+func RestoreFetchRefspecForSubmodule(submodulePath string) error {
+	// 서브모듈은 백업 없이 바로 기본값으로 복원
+	cmd := exec.Command("git", "-C", submodulePath, "config", "--unset-all", "remote.origin.fetch")
+	cmd.Run() // 에러 무시 (기존 설정이 없을 수 있음)
+	
+	// 기본 fetch refspec 설정
+	cmd = exec.Command("git", "-C", submodulePath, "config", "--add", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("기본 fetch refspec 설정 실패: %v", err)
+	}
+	
+	return nil
 }

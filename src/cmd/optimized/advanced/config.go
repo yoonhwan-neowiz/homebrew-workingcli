@@ -222,7 +222,23 @@ func performBackup() {
 		infoStyle.Println("건너뜀 (설정 없음)")
 	}
 	
-	// 4. 백업 요약
+	// 4. Fetch Refspec 백업
+	fmt.Print("🔄 Fetch Refspec 백업 중... ")
+	fetchBackup := filepath.Join(timestampDir, "fetch-refspec.txt")
+	
+	// 메인 저장소 fetch refspec
+	cmd := exec.Command("git", "config", "--get-all", "remote.origin.fetch")
+	if output, err := cmd.Output(); err == nil && len(output) > 0 {
+		if err := os.WriteFile(fetchBackup, output, 0644); err != nil {
+			warningStyle.Println("저장 실패")
+		} else {
+			infoStyle.Println("완료")
+		}
+	} else {
+		infoStyle.Println("건너뜀 (기본값)")
+	}
+	
+	// 5. 백업 요약
 	fmt.Println("\n✅ 백업 완료!")
 	fmt.Printf("   ├─ 위치: %s\n", boldStyle.Sprint(backupDir))
 	fmt.Printf("   ├─ 타임스탬프: %s\n", boldStyle.Sprint(timestamp))
@@ -232,6 +248,9 @@ func performBackup() {
 		fmt.Printf("       • %s\n", filepath.Base(sparseBackup))
 	}
 	fmt.Printf("       • %s\n", filepath.Base(optimizationBackup))
+	if _, err := os.Stat(fetchBackup); err == nil {
+		fmt.Printf("       • %s\n", filepath.Base(fetchBackup))
+	}
 }
 
 func performRestore() {
@@ -401,6 +420,29 @@ func performRestore() {
 						paths := strings.Split(value, ",")
 						config.Set("optimize.submodule.sparse.paths", paths)
 					}
+				}
+			}
+		}
+		infoStyle.Println("완료")
+	}
+	
+	// 4. Fetch Refspec 복원
+	fetchBackup := filepath.Join(backupTimestampDir, "fetch-refspec.txt")
+	if data, err := os.ReadFile(fetchBackup); err == nil && len(data) > 0 {
+		fmt.Print("🔄 Fetch Refspec 복원 중... ")
+		
+		// 기존 설정 제거
+		cmd := exec.Command("git", "config", "--unset-all", "remote.origin.fetch")
+		cmd.Run()
+		
+		// 백업에서 복원
+		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				cmd = exec.Command("git", "config", "--add", "remote.origin.fetch", line)
+				if err := cmd.Run(); err != nil {
+					warningStyle.Printf("실패: %s\n", line)
 				}
 			}
 		}

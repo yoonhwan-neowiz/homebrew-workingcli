@@ -8,6 +8,7 @@ import (
 	"strings"
 	
 	"github.com/spf13/cobra"
+	"workingcli/src/config"
 	"workingcli/src/utils"
 )
 
@@ -91,20 +92,13 @@ func runSubmoduleSetBranchScope(args []string) {
 func getSubmoduleFilters(submodulePaths []string) map[string][]string {
 	filters := make(map[string][]string)
 	
-	for _, path := range submodulePaths {
-		if path == "" {
-			continue
-		}
-		
-		configKey := fmt.Sprintf("submodule.%s.branchFilter", path)
-		getCmd := exec.Command("git", "config", "--get", configKey)
-		output, err := getCmd.Output()
-		
-		if err == nil && len(output) > 0 {
-			branchList := strings.TrimSpace(string(output))
-			if branchList != "" {
-				branches := strings.Split(branchList, ",")
-				filters[path] = branches
+	// 현재 config에서 branch_scope 읽기
+	submoduleScope := config.GetSubmoduleBranchScope()
+	if len(submoduleScope) > 0 {
+		// 모든 서브모듈에 동일하게 적용
+		for _, path := range submodulePaths {
+			if path != "" {
+				filters[path] = submoduleScope
 			}
 		}
 	}
@@ -216,25 +210,23 @@ func applySubmoduleBranchFilter(submodulePaths []string, branches []string) {
 	// 모든 서브모듈에 동일한 브랜치 필터 적용
 	successCount := 0
 	failCount := 0
-	branchList := strings.Join(branches, ",")
+	
+	// .gaconfig/config.yaml에도 서브모듈 브랜치 스코프 저장
+	if err := config.SetSubmoduleBranchScope(branches); err != nil {
+		fmt.Printf("⚠️ config.yaml 서브모듈 브랜치 스코프 설정 실패: %v\n", err)
+	}
 	
 	for _, path := range submodulePaths {
 		if path == "" {
 			continue
 		}
 		
-		// 서브모듈별 필터 설정 (git config에 저장)
-		configKey := fmt.Sprintf("submodule.%s.branchFilter", path)
-		setCmd := exec.Command("git", "config", configKey, branchList)
-		if err := setCmd.Run(); err != nil {
-			fmt.Printf("⚠️  %s 필터 설정 실패: %v\n", path, err)
+		// 서브모듈의 fetch refspec 설정
+		if err := utils.SetFetchRefspecForSubmodule(path, branches); err != nil {
+			fmt.Printf("⚠️  %s fetch refspec 설정 실패: %v\n", path, err)
 			failCount++
 			continue
 		}
-		
-		// 서브모듈 디렉토리에서도 설정 (선택적)
-		submoduleConfigCmd := exec.Command("git", "-C", path, "config", "workingcli.branchFilter", branchList)
-		submoduleConfigCmd.Run() // 실패해도 무시
 		
 		successCount++
 	}
