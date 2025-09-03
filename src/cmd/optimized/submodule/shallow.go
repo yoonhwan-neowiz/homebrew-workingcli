@@ -122,6 +122,46 @@ func runShallow(args []string) {
 				}
 			}
 			
+			// 현재 브랜치 저장
+			currentBranch := "HEAD"
+			currentBranchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+			if currentBranchOutput, err := currentBranchCmd.Output(); err == nil {
+				currentBranch = strings.TrimSpace(string(currentBranchOutput))
+			}
+			
+			// 모든 로컬 브랜치를 remote와 동기화
+			// git branch 명령으로 서브모듈 내 로컬 브랜치 가져오기
+			branchListCmd := exec.Command("git", "branch", "--format=%(refname:short)")
+			if branchOutput, err := branchListCmd.Output(); err == nil {
+				subBranches := strings.Split(strings.TrimSpace(string(branchOutput)), "\n")
+				for _, subBranch := range subBranches {
+					subBranch = strings.TrimSpace(subBranch)
+					if subBranch == "" {
+						continue
+					}
+					
+					// 각 브랜치를 remote와 동기화
+					checkoutCmd := exec.Command("git", "checkout", subBranch, "-q")
+					if err := checkoutCmd.Run(); err == nil {
+						// remote 브랜치가 있는지 확인
+						remoteVerifyCmd := exec.Command("git", "rev-parse", "--verify", "origin/"+subBranch)
+						if err := remoteVerifyCmd.Run(); err == nil {
+							// reset --hard origin/branch
+							resetCmd := exec.Command("git", "reset", "--hard", "origin/"+subBranch)
+							resetCmd.Run()
+						}
+					}
+				}
+				
+				// 원래 브랜치로 돌아가기
+				checkoutBackCmd := exec.Command("git", "checkout", currentBranch, "-q")
+				checkoutBackCmd.Run()
+			}
+			
+			// reflog 정리
+			reflogCmd := exec.Command("git", "reflog", "expire", "--expire=now", "--all")
+			reflogCmd.Run()
+			
 			// gc 실행으로 오래된 객체 정리
 			gcCmd := exec.Command("git", "gc", "--prune=now")
 			gcCmd.Run()

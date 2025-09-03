@@ -172,7 +172,80 @@ func runShallow(targetDepth int) {
 	
 	infoStyle.Println("완료")
 	
-	// 7. Git GC 실행으로 불필요한 객체 정리
+	// 7. 모든 로컬 브랜치를 remote와 동기화 (shallow 상태 적용)
+	// 로컬에 남아있는 전체 히스토리를 정리하기 위해 필요
+	confirmMsg = "\n모든 로컬 브랜치를 remote의 shallow 상태로 동기화하시겠습니까?"
+	confirmMsg += "\n(로컬에만 있는 커밋은 손실될 수 있습니다)"
+	
+	if utils.ConfirmForce(confirmMsg) {
+		// 현재 브랜치 백업
+		originalBranch := utils.GetCurrentBranch()
+		
+		// 모든 로컬 브랜치 목록 가져오기
+		fmt.Println("🔄 로컬 브랜치들을 shallow 상태로 동기화 중...")
+		
+		// git branch 명령으로 모든 로컬 브랜치 가져오기
+		branchCmd := exec.Command("git", "branch", "--format=%(refname:short)")
+		output, err := branchCmd.Output()
+		if err == nil {
+			branches := strings.Split(strings.TrimSpace(string(output)), "\n")
+			
+			for _, branch := range branches {
+				branch = strings.TrimSpace(branch)
+				if branch == "" {
+					continue
+				}
+				
+				fmt.Printf("   ├─ %s 브랜치 동기화 중... ", branch)
+				
+				// 브랜치 체크아웃
+				checkoutCmd := exec.Command("git", "checkout", branch, "-q")
+				if err := checkoutCmd.Run(); err != nil {
+					warningStyle.Println("건너뜀 (체크아웃 실패)")
+					continue
+				}
+				
+				// remote 브랜치가 있는지 확인
+				remoteCmd := exec.Command("git", "rev-parse", "--verify", "origin/"+branch)
+				if err := remoteCmd.Run(); err != nil {
+					// remote 브랜치가 없으면 건너뛰기
+					warningStyle.Println("건너뜀 (remote 브랜치 없음)")
+					continue
+				}
+				
+				// reset --hard origin/branch
+				resetCmd := exec.Command("git", "reset", "--hard", "origin/"+branch)
+				if err := resetCmd.Run(); err != nil {
+					warningStyle.Println("실패")
+				} else {
+					infoStyle.Println("완료")
+				}
+			}
+		}
+		
+		// 원래 브랜치로 돌아가기
+		fmt.Printf("   └─ %s 브랜치로 복귀 중... ", originalBranch)
+		checkoutCmd := exec.Command("git", "checkout", originalBranch, "-q")
+		if err := checkoutCmd.Run(); err != nil {
+			warningStyle.Println("실패")
+		} else {
+			infoStyle.Println("완료")
+		}
+
+		// 8. reflog 정리로 이전 히스토리 참조 제거
+		fmt.Print("📚 이전 히스토리 참조 정리 중... ")
+		cmd = exec.Command("git", "reflog", "expire", "--expire=now", "--all")
+		if err := cmd.Run(); err != nil {
+			warningStyle.Println("부분 성공")
+		} else {
+			infoStyle.Println("완료")
+		}
+	} else {
+		warningStyle.Println("⚠️  로컬 동기화를 건너뛰었습니다.")
+		warningStyle.Println("   └─ 로컬 브랜치가 여전히 전체 히스토리를 보유하고 있을 수 있습니다")
+	}
+
+	// 9. Git GC 실행으로 불필요한 객체 정리
 	fmt.Print("🧹 불필요한 객체 정리 중... ")
 	
 	cmd = exec.Command("git", "gc", "--prune=now", "--aggressive")
