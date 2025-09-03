@@ -111,6 +111,7 @@ func NewOptimizedCmd() *cobra.Command {
 		// 전체 서브모듈 제어
 		submodule.NewShallowCmd(),         // Shallow (recursive)
 		submodule.NewUnshallowCmd(),       // Unshallow (recursive)
+		submodule.NewUpdateCmd(),           // Update (서브모듈 업데이트)
 		
 		// 브랜치 필터
 		submodule.NewSetBranchScopeCmd(),    // Set Branch Scope (submodule)
