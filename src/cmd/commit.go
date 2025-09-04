@@ -84,7 +84,7 @@ func NewCommitCmd() *cobra.Command {
 				fmt.Println()
 			}
 
-			if !utils.ConfirmWithDefault("위 파일들의 변경사항으로 커밋 메시지를 생성하시겠습니까?", false) {
+			if !utils.ConfirmWithDefault("위 파일들의 변경사항으로 커밋 메시지를 생성하시겠습니까?", true) {
 				return nil
 			}
 
