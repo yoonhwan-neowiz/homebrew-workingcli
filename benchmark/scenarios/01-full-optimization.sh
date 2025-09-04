@@ -38,7 +38,8 @@ run_scenario() {
     else
         init_repository
     fi
-    init_duration=$?
+    # INIT_DURATION 전역 변수 사용 (optimize.sh에서 설정됨)
+    init_duration=$INIT_DURATION
     
     # Step 2: Baseline 측정
     show_progress 2 $total_steps "Baseline 측정"
@@ -50,7 +51,7 @@ run_scenario() {
     # Step 3: Branch Scope 최적화 (먼저 실행)
     show_progress 3 $total_steps "Branch Scope 최적화"
     apply_branch_scope
-    local scope_duration=$?
+    local scope_duration=$OPT_DURATION
     measure_step "BRANCH_SCOPE" 1 $scope_duration
     calculate_delta $baseline_git $LAST_GIT_STORE $baseline_wt $LAST_WORKTREE $baseline_total $LAST_TOTAL $scope_duration
     local after_scope_git=$LAST_GIT_STORE
@@ -60,7 +61,7 @@ run_scenario() {
     # Step 4: Shallow 최적화 (Branch Scope 이후)
     show_progress 4 $total_steps "Shallow 최적화"
     apply_shallow 1
-    local shallow_duration=$?
+    local shallow_duration=$OPT_DURATION
     measure_step "SHALLOW" 2 $shallow_duration
     calculate_delta $after_scope_git $LAST_GIT_STORE $after_scope_wt $LAST_WORKTREE $after_scope_total $LAST_TOTAL $shallow_duration
     local after_shallow_git=$LAST_GIT_STORE
@@ -71,7 +72,7 @@ run_scenario() {
     if [ "$SKIP_SLIM" = false ]; then
         show_progress 5 $total_steps "To-slim 최적화"
         apply_to_slim
-        local slim_duration=$?
+        local slim_duration=$OPT_DURATION
         measure_step "TO_SLIM" 3 $slim_duration
         calculate_delta $after_shallow_git $LAST_GIT_STORE $after_shallow_wt $LAST_WORKTREE $after_shallow_total $LAST_TOTAL $slim_duration
         local after_slim_git=$LAST_GIT_STORE
@@ -84,7 +85,7 @@ run_scenario() {
         local step_num=$((total_steps))
         show_progress $step_num $total_steps "Sparse-checkout 최적화"
         apply_sparse
-        local sparse_duration=$?
+        local sparse_duration=$OPT_DURATION
         measure_step "SPARSE" 4 $sparse_duration
         
         # 델타 계산시 이전 단계 값 사용

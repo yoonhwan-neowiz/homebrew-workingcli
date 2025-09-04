@@ -52,7 +52,9 @@ init_repository() {
     log_output "  소스: $SOURCE_DIR"
     log_output "  타겟: $TEST_DIR"
     
-    return $duration
+    # duration을 전역 변수로 저장하고, return은 성공(0) 반환
+    INIT_DURATION=$duration
+    return 0
 }
 
 # 저장소 초기화 (clone 방식)
@@ -89,7 +91,9 @@ init_repository_clone() {
     local duration=$(end_timer)
     log_color "${GREEN}✓ 저장소 초기화 완료 (${duration}s)${NC}"
     
-    return $duration
+    # duration을 전역 변수로 저장하고, return은 성공(0) 반환
+    INIT_DURATION=$duration
+    return 0
 }
 
 # ==================== 최적화 단계 함수 ====================
@@ -112,7 +116,9 @@ apply_shallow() {
     local duration=$(end_timer)
     log_color "${GREEN}✓ Shallow 완료 (${duration}s)${NC}"
     
-    return $duration
+    # duration을 전역 변수로 저장
+    OPT_DURATION=$duration
+    return 0
 }
 
 # Branch Scope 최적화
@@ -152,7 +158,9 @@ apply_branch_scope() {
     local duration=$(end_timer)
     log_color "${GREEN}✓ Branch Scope 완료 (${duration}s)${NC}"
     
-    return $duration
+    # duration을 전역 변수로 저장
+    OPT_DURATION=$duration
+    return 0
 }
 
 # To-slim 최적화
@@ -172,7 +180,9 @@ apply_to_slim() {
     local duration=$(end_timer)
     log_color "${GREEN}✓ To-slim 완료 (${duration}s)${NC}"
     
-    return $duration
+    # duration을 전역 변수로 저장
+    OPT_DURATION=$duration
+    return 0
 }
 
 # Sparse-checkout 최적화
@@ -188,7 +198,9 @@ apply_sparse() {
     local duration=$(end_timer)
     log_color "${GREEN}✓ Sparse-checkout 완료 (${duration}s)${NC}"
     
-    return $duration
+    # duration을 전역 변수로 저장
+    OPT_DURATION=$duration
+    return 0
 }
 
 # ==================== 복구 함수 ====================
