@@ -140,11 +140,14 @@ apply_branch_scope() {
     
     # 메인 저장소
     log_output "메인 저장소 branch-scope 적용 중..."
-    $GA_CMD opt quick set-branch-scope $scope_branches 2>&1 | tee -a "$LOG_FILE"
+    # 공백으로 구분된 브랜치를 배열로 변환하여 전달
+    IFS=' ' read -ra branch_array <<< "$scope_branches"
+    $GA_CMD opt quick set-branch-scope "${branch_array[@]}" 2>&1 | tee -a "$LOG_FILE"
     
     # 서브모듈
     log_output "서브모듈 branch-scope 적용 중..."
-    $GA_CMD opt submodule set-branch-scope $scope_branches 2>&1 | tee -a "$LOG_FILE"
+    # 공백으로 구분된 브랜치를 배열로 변환하여 전달
+    $GA_CMD opt submodule set-branch-scope "${branch_array[@]}" 2>&1 | tee -a "$LOG_FILE"
     
     # Accurate 모드에서만 prune 실행
     if [ "$MODE" = "accurate" ]; then
