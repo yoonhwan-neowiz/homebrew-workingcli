@@ -65,6 +65,7 @@ func NewOptimizedCmd() *cobra.Command {
 	}
 	setupCmd.AddCommand(
 		setup.NewCloneSlimCmd(),    // Clone SLIM
+		setup.NewCloneMasterCmd(),  // Clone Master
 		setup.NewMigrateCmd(),       // Migrate
 		setup.NewPerformanceCmd(),   // Performance
 	)
