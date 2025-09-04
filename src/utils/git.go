@@ -1014,7 +1014,7 @@ func SetFetchRefspec(branches []string) error {
 		return fmt.Errorf("브랜치 목록이 비어있습니다")
 	}
 
-	// 백업 먼저 수행
+	// 백업 먼저 수행 (fetch refspec 백업)
 	_, err := BackupFetchRefspec()
 	if err != nil {
 		return fmt.Errorf("fetch refspec 백업 실패: %v", err)
@@ -1024,7 +1024,7 @@ func SetFetchRefspec(branches []string) error {
 	cmd := exec.Command("git", "config", "--unset-all", "remote.origin.fetch")
 	cmd.Run() // 에러 무시 (기존 설정이 없을 수 있음)
 
-	// 새로운 fetch refspec 설정
+	// 새로운 fetch refspec 설정 (브랜치만)
 	for _, branch := range branches {
 		branch = strings.TrimSpace(branch)
 		if branch == "" {
@@ -1037,8 +1037,14 @@ func SetFetchRefspec(branches []string) error {
 		}
 	}
 
+	// 태그 fetch 비활성화 (태그 가시성 차단)
+	// 별도의 태그 refspec은 추가하지 않음으로써 태그가 fetch되지 않도록 함
+
 	// 기존 원격 브랜치 참조 정리 - 설정된 브랜치 외의 모든 원격 브랜치 삭제
 	cleanupRemoteBranches(branches)
+
+	// 기존 원격 태그 참조도 제거 (원격 태그는 삭제하지 않고 로컬 참조만 제거)
+	cleanupRemoteTags()
 
 	return nil
 }
@@ -1082,7 +1088,7 @@ func RestoreFetchRefspec() error {
 	backupDir, err := GetLatestBackupDir()
 	
 	if err == nil {
-		// 백업 파일에서 복원
+		// 백업 파일에서 fetch refspec 복원
 		backupFile := filepath.Join(backupDir, "fetch-refspec-backup.txt")
 		
 		if content, err := os.ReadFile(backupFile); err == nil && len(content) > 0 {
@@ -1102,6 +1108,19 @@ func RestoreFetchRefspec() error {
 				}
 			}
 			
+			// 태그 refspec이 백업에 없었다면 기본 태그 refspec 추가
+			hasTagRefspec := false
+			for _, line := range lines {
+				if strings.Contains(line, "refs/tags/") {
+					hasTagRefspec = true
+					break
+				}
+			}
+			if !hasTagRefspec {
+				cmd := exec.Command("git", "config", "--add", "remote.origin.fetch", "+refs/tags/*:refs/tags/*")
+				cmd.Run() // 에러 무시
+			}
+			
 			return nil
 		}
 	}
@@ -1110,12 +1129,41 @@ func RestoreFetchRefspec() error {
 	cmd := exec.Command("git", "config", "--unset-all", "remote.origin.fetch")
 	cmd.Run()
 	
+	// 브랜치와 태그 모두 fetch하도록 설정
 	cmd = exec.Command("git", "config", "--add", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("기본 fetch refspec 설정 실패: %v", err)
 	}
 	
+	// 태그도 fetch하도록 설정
+	cmd = exec.Command("git", "config", "--add", "remote.origin.fetch", "+refs/tags/*:refs/tags/*")
+	cmd.Run() // 에러 무시
+	
 	return nil
+}
+
+// cleanupRemoteTags removes all remote tag references (local tracking only, not actual remote tags)
+func cleanupRemoteTags() {
+	// refs/tags/ 아래의 모든 태그 참조 가져오기 (로컬 참조만)
+	cmd := exec.Command("git", "for-each-ref", "--format=%(refname)", "refs/tags/")
+	output, err := cmd.Output()
+	if err != nil {
+		return // 에러 무시
+	}
+	
+	// 각 태그 참조 삭제 (로컬 참조만 삭제, 원격 태그는 유지)
+	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for _, tagRef := range tags {
+		tagRef = strings.TrimSpace(tagRef)
+		if tagRef == "" {
+			continue
+		}
+		
+		// 태그 참조 제거 (원격에서 fetch된 태그의 로컬 참조만 제거)
+		// 원격 태그 자체는 영향받지 않음
+		cmd = exec.Command("git", "update-ref", "-d", tagRef)
+		cmd.Run() // 에러 무시
+	}
 }
 
 // SetFetchRefspecForSubmodule sets fetch refspec for a submodule
@@ -1124,11 +1172,18 @@ func SetFetchRefspecForSubmodule(submodulePath string, branches []string) error 
 		return fmt.Errorf("브랜치 목록이 비어있습니다")
 	}
 
+	// 백업 디렉토리 생성 (fetch refspec 백업용)
+	timestamp := time.Now().Format("20060102_150405")
+	backupBase := filepath.Join(submodulePath, ".git", "gaconfig", "backups", timestamp)
+	if err := os.MkdirAll(backupBase, 0755); err != nil {
+		return fmt.Errorf("백업 디렉토리 생성 실패: %v", err)
+	}
+
 	// 기존 fetch refspec 모두 제거
 	cmd := exec.Command("git", "-C", submodulePath, "config", "--unset-all", "remote.origin.fetch")
 	cmd.Run() // 에러 무시 (기존 설정이 없을 수 있음)
 
-	// 새로운 fetch refspec 설정
+	// 새로운 fetch refspec 설정 (브랜치만, 태그 제외)
 	for _, branch := range branches {
 		branch = strings.TrimSpace(branch)
 		if branch == "" {
@@ -1140,10 +1195,17 @@ func SetFetchRefspecForSubmodule(submodulePath string, branches []string) error 
 			return fmt.Errorf("fetch refspec 설정 실패 (%s): %v", branch, err)
 		}
 	}
+	// 태그 fetch refspec은 추가하지 않음 (태그를 가져오지 않도록)
 
 	// 기존 원격 브랜치 참조 정리 - 설정된 브랜치 외의 모든 원격 브랜치 삭제
 	if err := cleanupRemoteBranchesForSubmodule(submodulePath, branches); err != nil {
 		return fmt.Errorf("원격 브랜치 정리 실패: %v", err)
+	}
+
+	// 원격 태그 참조 정리 (로컬 참조만 삭제, 원격에서는 삭제하지 않음)
+	if err := cleanupRemoteTagsForSubmodule(submodulePath); err != nil {
+		// 에러가 발생해도 계속 진행
+		fmt.Printf("⚠️  서브모듈 %s 원격 태그 참조 정리 중 경고: %v\n", submodulePath, err)
 	}
 
 	return nil
@@ -1184,14 +1246,47 @@ func cleanupRemoteBranchesForSubmodule(submodulePath string, keepBranches []stri
 
 // RestoreFetchRefspecForSubmodule restores fetch refspec for a submodule
 func RestoreFetchRefspecForSubmodule(submodulePath string) error {
-	// 서브모듈은 백업 없이 바로 기본값으로 복원
+	// 서브모듈 fetch refspec 초기화
 	cmd := exec.Command("git", "-C", submodulePath, "config", "--unset-all", "remote.origin.fetch")
 	cmd.Run() // 에러 무시 (기존 설정이 없을 수 있음)
 	
-	// 기본 fetch refspec 설정
+	// 기본 fetch refspec 설정 (브랜치)
 	cmd = exec.Command("git", "-C", submodulePath, "config", "--add", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("기본 fetch refspec 설정 실패: %v", err)
+	}
+	
+	// 태그 fetch refspec도 추가
+	cmd = exec.Command("git", "-C", submodulePath, "config", "--add", "remote.origin.fetch", "+refs/tags/*:refs/tags/*")
+	cmd.Run() // 에러 무시
+	
+	return nil
+}
+
+
+
+
+
+// cleanupRemoteTagsForSubmodule removes all remote tag references for a submodule
+func cleanupRemoteTagsForSubmodule(submodulePath string) error {
+	// refs/tags/ 아래의 모든 원격 태그 참조 가져오기
+	cmd := exec.Command("git", "-C", submodulePath, "for-each-ref", "--format=%(refname)", "refs/tags/")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil // 태그가 없을 수 있으므로 에러 무시
+	}
+	
+	// 각 태그 참조 삭제 (로컬 참조만 삭제, 원격 태그는 유지)
+	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for _, tagRef := range tags {
+		tagRef = strings.TrimSpace(tagRef)
+		if tagRef == "" {
+			continue
+		}
+		
+		// 원격 태그 참조 삭제 (fetch로 가져온 태그들)
+		cmd = exec.Command("git", "-C", submodulePath, "update-ref", "-d", tagRef)
+		cmd.Run() // 에러 무시
 	}
 	
 	return nil

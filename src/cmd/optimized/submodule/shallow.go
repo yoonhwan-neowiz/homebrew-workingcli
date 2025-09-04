@@ -75,6 +75,14 @@ func runShallow(args []string) {
 		}
 		defer os.Chdir(originalDir)
 
+		// 현재 HEAD 커밋 SHA 가져오기 (detached HEAD 처리)
+		headSHACmd := exec.Command("git", "rev-parse", "HEAD")
+		headSHAOutput, err := headSHACmd.Output()
+		if err != nil {
+			return fmt.Errorf("HEAD 커밋 확인 실패: %v", err)
+		}
+		currentHeadSHA := strings.TrimSpace(string(headSHAOutput))
+		
 		// 현재 shallow 상태 확인
 		isShallowCmd := exec.Command("git", "rev-parse", "--is-shallow-repository")
 		output, _ := isShallowCmd.Output()
@@ -90,83 +98,79 @@ func runShallow(args []string) {
 				fmt.Printf("ℹ️ %s: 이미 Shallow 상태 (depth: %s)\n", path, currentDepth)
 				return nil // 성공으로 처리
 			}
-			
-			// depth 업데이트 - fetch를 먼저 시도
-			fetchCmd := exec.Command("git", "fetch", fmt.Sprintf("--depth=%d", depth))
-			if err := fetchCmd.Run(); err != nil {
-				// fetch 실패 시 pull with --allow-unrelated-histories
-				pullCmd := exec.Command("git", "pull", fmt.Sprintf("--depth=%d", depth), "--allow-unrelated-histories")
-				if err := pullCmd.Run(); err != nil {
-					return fmt.Errorf("Shallow 업데이트 실패: %v", err)
+		}
+		
+		// Remote HEAD 기준으로 강제 shallow 변환
+		// 먼저 remote에서 최신 정보를 가져옴
+		fmt.Printf("🔄 %s: Remote HEAD 기준으로 shallow depth=%d 적용 중...\n", path, depth)
+		
+		// 1. fetch --depth로 remote의 최신 상태를 shallow로 가져옴
+		fetchCmd := exec.Command("git", "fetch", "origin", fmt.Sprintf("--depth=%d", depth), "--update-shallow")
+		if err := fetchCmd.Run(); err != nil {
+			// 실패 시 현재 커밋 SHA로 직접 시도
+			fetchSHACmd := exec.Command("git", "fetch", "origin", currentHeadSHA, fmt.Sprintf("--depth=%d", depth))
+			if err := fetchSHACmd.Run(); err != nil {
+				// 그래도 실패하면 모든 참조를 shallow로 가져오기
+				fetchAllCmd := exec.Command("git", "fetch", "--all", fmt.Sprintf("--depth=%d", depth))
+				if err := fetchAllCmd.Run(); err != nil {
+					return fmt.Errorf("Shallow fetch 실패: %v", err)
 				}
 			}
-			fmt.Printf("✅ %s: Depth를 %d로 변경\n", path, depth)
-		} else {
-			// shallow로 변환 - fetch를 먼저 시도 (더 안전)
-			fetchCmd := exec.Command("git", "fetch", fmt.Sprintf("--depth=%d", depth))
-			if err := fetchCmd.Run(); err != nil {
-				// fetch 실패 시 pull with --allow-unrelated-histories
-				pullCmd := exec.Command("git", "pull", fmt.Sprintf("--depth=%d", depth), "--allow-unrelated-histories")
-				if err := pullCmd.Run(); err != nil {
-					// 그래도 실패하면 origin과 현재 브랜치를 명시적으로 지정
-					branch := "HEAD"
-					branchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-					if branchOutput, err := branchCmd.Output(); err == nil {
-						branch = strings.TrimSpace(string(branchOutput))
-					}
-					
-					fetchOriginCmd := exec.Command("git", "fetch", "origin", branch, fmt.Sprintf("--depth=%d", depth))
-					if err := fetchOriginCmd.Run(); err != nil {
-						return fmt.Errorf("Shallow 변환 실패: %v", err)
-					}
-				}
-			}
-			
-			// 현재 브랜치 저장
-			currentBranch := "HEAD"
-			currentBranchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-			if currentBranchOutput, err := currentBranchCmd.Output(); err == nil {
-				currentBranch = strings.TrimSpace(string(currentBranchOutput))
-			}
-			
-			// 모든 로컬 브랜치를 remote와 동기화
-			// git branch 명령으로 서브모듈 내 로컬 브랜치 가져오기
-			branchListCmd := exec.Command("git", "branch", "--format=%(refname:short)")
-			if branchOutput, err := branchListCmd.Output(); err == nil {
-				subBranches := strings.Split(strings.TrimSpace(string(branchOutput)), "\n")
-				for _, subBranch := range subBranches {
-					subBranch = strings.TrimSpace(subBranch)
-					if subBranch == "" {
-						continue
-					}
-					
-					// 각 브랜치를 remote와 동기화
-					checkoutCmd := exec.Command("git", "checkout", subBranch, "-q")
-					if err := checkoutCmd.Run(); err == nil {
-						// remote 브랜치가 있는지 확인
-						remoteVerifyCmd := exec.Command("git", "rev-parse", "--verify", "origin/"+subBranch)
-						if err := remoteVerifyCmd.Run(); err == nil {
-							// reset --hard origin/branch
-							resetCmd := exec.Command("git", "reset", "--hard", "origin/"+subBranch)
-							resetCmd.Run()
-						}
-					}
+		}
+		
+		// 2. 브랜치 동기화를 shallow 변환 후에 실행 (quick/shallow.go처럼)
+		// 현재 브랜치 저장
+		currentBranch := "HEAD"
+		currentBranchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+		if currentBranchOutput, err := currentBranchCmd.Output(); err == nil {
+			currentBranch = strings.TrimSpace(string(currentBranchOutput))
+		}
+		
+		// 모든 로컬 브랜치를 remote와 동기화 (shallow 상태 적용을 위해)
+		fmt.Printf("   ├─ 로컬 브랜치들을 shallow 상태로 동기화 중...\n")
+		branchListCmd := exec.Command("git", "branch", "--format=%(refname:short)")
+		if branchOutput, err := branchListCmd.Output(); err == nil {
+			subBranches := strings.Split(strings.TrimSpace(string(branchOutput)), "\n")
+			for _, subBranch := range subBranches {
+				subBranch = strings.TrimSpace(subBranch)
+				if subBranch == "" {
+					continue
 				}
 				
-				// 원래 브랜치로 돌아가기
+				// 각 브랜치를 remote와 동기화
+				checkoutCmd := exec.Command("git", "checkout", subBranch, "-q")
+				if err := checkoutCmd.Run(); err == nil {
+					// remote 브랜치가 있는지 확인
+					remoteVerifyCmd := exec.Command("git", "rev-parse", "--verify", "origin/"+subBranch)
+					if err := remoteVerifyCmd.Run(); err == nil {
+						// reset --hard origin/branch로 shallow 상태 강제 적용
+						resetCmd := exec.Command("git", "reset", "--hard", "origin/"+subBranch)
+						resetCmd.Run()
+					}
+				}
+			}
+			
+			// 원래 브랜치/커밋으로 돌아가기
+			if currentBranch == "HEAD" {
+				// Detached HEAD 상태였다면 원래 커밋으로
+				checkoutSHACmd := exec.Command("git", "checkout", currentHeadSHA, "-q")
+				checkoutSHACmd.Run()
+			} else {
+				// 브랜치였다면 브랜치로
 				checkoutBackCmd := exec.Command("git", "checkout", currentBranch, "-q")
 				checkoutBackCmd.Run()
 			}
-			
-			// reflog 정리
-			reflogCmd := exec.Command("git", "reflog", "expire", "--expire=now", "--all")
-			reflogCmd.Run()
-			
-			// gc 실행으로 오래된 객체 정리
-			gcCmd := exec.Command("git", "gc", "--prune=now")
-			gcCmd.Run()
-			fmt.Printf("✅ %s: Shallow Clone으로 변환 완료\n", path)
 		}
+		
+		// 3. reflog 정리로 이전 히스토리 참조 제거
+		reflogCmd := exec.Command("git", "reflog", "expire", "--expire=now", "--all")
+		reflogCmd.Run()
+		
+		// 4. gc 실행으로 오래된 객체 완전 정리 (--aggressive 추가)
+		gcCmd := exec.Command("git", "gc", "--prune=now", "--aggressive")
+		gcCmd.Run()
+		
+		fmt.Printf("✅ %s: Shallow Clone으로 변환 완료 (depth=%d)\n", path, depth)
 		
 		return nil
 	}
