@@ -52,19 +52,28 @@ func NewUpdateCmd() *cobra.Command {
 }
 
 func runUpdate(forceUpdate bool, remoteUpdate bool) {
-	// 서브모듈 확인
+	fmt.Println("🔄 서브모듈 업데이트를 시작합니다...")
+	
+	// 먼저 서브모듈 초기화 (init) - 이게 있어야 카운트도 제대로 나옴
+	fmt.Println("📥 서브모듈 초기화 중...")
+	initCmd := exec.Command("git", "submodule", "update", "--init", "--recursive")
+	initCmd.Stdout = os.Stdout
+	initCmd.Stderr = os.Stderr
+	initErr := initCmd.Run()
+	
+	// 이제 서브모듈 확인
 	submoduleInfo := utils.GetSubmoduleInfo()
 	count, _ := submoduleInfo["count"].(int)
 	if count == 0 {
 		fmt.Println("ℹ️ 서브모듈이 없습니다.")
 		return
 	}
-
-	fmt.Println("🔄 서브모듈 업데이트를 시작합니다...")
 	
-	// 강제 또는 원격 업데이트 모드
+	fmt.Printf("\n📦 총 %d개의 서브모듈이 발견되었습니다.\n", count)
+	
+	// 강제 또는 원격 업데이트 모드 확인
 	if forceUpdate || remoteUpdate {
-		fmt.Println("⚠️ 강제 업데이트 모드: 원격 최신 커밋으로 업데이트합니다.")
+		fmt.Println("\n⚠️ 강제 업데이트 모드: 원격 최신 커밋으로 업데이트합니다.")
 		
 		// 사용자 확인
 		if !utils.ConfirmForce("모든 서브모듈을 원격 최신으로 업데이트하시겠습니까?") {
@@ -75,18 +84,9 @@ func runUpdate(forceUpdate bool, remoteUpdate bool) {
 		performForceUpdate()
 		return
 	}
-
-	// 일반 업데이트 시도
-	fmt.Printf("\n📦 총 %d개의 서브모듈을 업데이트합니다.\n\n", count)
 	
-	// 먼저 일반 업데이트 시도
-	fmt.Println("📥 서브모듈 업데이트 중...")
-	updateCmd := exec.Command("git", "submodule", "update", "--init", "--recursive")
-	updateCmd.Stdout = os.Stdout
-	updateCmd.Stderr = os.Stderr
-	
-	if err := updateCmd.Run(); err != nil {
-		// 실패 시 자동으로 원격 최신으로 시도
+	// init 명령이 실패했다면 원격 최신으로 시도
+	if initErr != nil {
 		fmt.Println("\n⚠️ 일반 업데이트 실패 - 원격 최신 커밋으로 시도합니다...")
 		
 		// 사용자 확인 (quiet 모드가 아닌 경우)
