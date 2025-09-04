@@ -20,7 +20,7 @@ source "$LIB_DIR/optimize.sh"
 source "$LIB_DIR/report.sh"
 
 # ==================== 옵션 파싱 ====================
-SCENARIO="01-full-optimization"  # 기본 시나리오
+SCENARIO="99-full-optimization"  # 기본 시나리오
 SCENARIO_FILE=""  # 직접 지정된 시나리오 파일
 
 parse_options() {
