@@ -65,12 +65,22 @@ func NewCommitCmd() *cobra.Command {
 			}
 			fmt.Println("=== diff 가져오기 끝 ===\n")
 			// 사용자 입력 받기
-			var customInput string
-			if utils.ConfirmWithDefault("커밋 메시지에 반영할 추가 설명이 있으시나요?", false) {
-				fmt.Print("\n추가 설명을 입력해주세요: ")
+			var taskType string
+			if utils.ConfirmWithDefault("Task 이름(taskType)을 입력하시겠습니까?", false) {
+				fmt.Print("\nTask 이름을 입력해주세요 (예: feature-auth, bugfix-login): ")
 				reader := bufio.NewReader(os.Stdin)
-				customInput, _ = reader.ReadString('\n')
-				customInput = strings.TrimSpace(customInput)
+				taskType, _ = reader.ReadString('\n')
+				taskType = strings.TrimSpace(taskType)
+				fmt.Println()
+			}
+
+			// taskDesc 입력 받기
+			var taskDesc string
+			if utils.ConfirmWithDefault("작업 의도나 추가 설명(taskDesc)을 입력하시겠습니까?", false) {
+				fmt.Print("\n작업 의도나 추가 설명을 입력해주세요 (AI가 커밋 메시지 작성 시 참고합니다): ")
+				reader := bufio.NewReader(os.Stdin)
+				taskDesc, _ = reader.ReadString('\n')
+				taskDesc = strings.TrimSpace(taskDesc)
 				fmt.Println()
 			}
 
@@ -99,12 +109,13 @@ func NewCommitCmd() *cobra.Command {
 			// 템플릿 데이터 준비
 			fmt.Println("\n=== 템플릿 데이터 준비 시작 ===")
 			data := map[string]string{
-				"customInput": customInput,
+				"taskType":    taskType,
+				"taskDesc":    taskDesc,
 				"files":       output,
 				"diff":        diffContent,
 				"keyword":     keyword,
 			}
-			fmt.Printf("files 길이: %d, diff 길이: %d, keyword: %s\n", len(output), len(diffContent), keyword)
+			fmt.Printf("files 길이: %d, diff 길이: %d, keyword: %s, taskType 길이: %d, taskDesc 길이: %d\n", len(output), len(diffContent), keyword, len(taskType), len(taskDesc))
 			fmt.Println("=== 템플릿 데이터 준비 끝 ===\n")
 
 			// 템플릿 적용
