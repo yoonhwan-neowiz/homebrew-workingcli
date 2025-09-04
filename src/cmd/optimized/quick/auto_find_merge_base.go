@@ -13,20 +13,36 @@ import (
 
 // NewAutoFindMergeBaseCmd creates the Auto Find Merge Base command
 func NewAutoFindMergeBaseCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "auto-find-merge-base",
-		Short: "브랜치 병합점 자동 찾기",
-		Long: `두 브랜치가 만나는 공통 조상 커밋(merge-base)을 자동으로 찾습니다.
-필요 시 히스토리를 자동 확장하며 병합 가능성을 판단하는 기준점을 제공합니다.`,
+	var forceMode bool
+	var quietMode bool
+	
+	cmd := &cobra.Command{
+		Use:   "auto-find-merge-base [branch1] [branch2] ...",
+		Aliases: []string{"auto", "auto-find"},
+    Short: "브랜치 병합점 자동 찾기",
+		Long: `두 개 이상의 브랜치가 만나는 공통 조상 커밋(merge-base)을 자동으로 찾습니다.
+필요 시 히스토리를 자동 확장하며 병합 가능성을 판단하는 기준점을 제공합니다.
+
+사용 예:
+  ga opt quick auto                           # 대화형 모드
+  ga opt quick auto master develop            # 두 브랜치 비교
+  ga opt quick auto master live59.a/5907.1 -f -q  # 여러 브랜치를 조용히 강제 실행`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runAutoFindMergeBase()
+			runAutoFindMergeBase(args, forceMode, quietMode)
 		},
 	}
+	
+	cmd.Flags().BoolVarP(&forceMode, "force", "f", false, "확인 없이 강제 실행")
+	cmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "조용한 모드 (최소 출력)")
+	
+	return cmd
 }
 
-func runAutoFindMergeBase() {
-	fmt.Println("🔍 브랜치 병합점 자동 찾기")
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━")
+func runAutoFindMergeBase(args []string, forceMode, quietMode bool) {
+	if !quietMode {
+		fmt.Println("🔍 브랜치 병합점 자동 찾기")
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━")
+	}
 	
 	// Git 저장소 확인
 	if !utils.IsGitRepository() {
@@ -34,40 +50,71 @@ func runAutoFindMergeBase() {
 		os.Exit(1)
 	}
 	
-	// 현재 브랜치 확인
-	currentBranch := utils.GetCurrentBranch()
-	fmt.Printf("📍 현재 브랜치: %s\n", currentBranch)
+	var branches []string
 	
-	// 비교할 브랜치 입력받기
-	targetBranch := getBranchInput("비교할 브랜치명을 입력하세요")
+	// 인자가 제공된 경우
+	if len(args) > 0 {
+		branches = args
+		
+		// 브랜치 존재 여부 확인 (force 모드가 아닐 때만)
+		if !forceMode {
+			for _, branch := range branches {
+				if !branchExists(branch) {
+					if strings.Contains(branch, "/") {
+						if !quietMode {
+							fmt.Printf("ℹ️  원격 브랜치 %s를 사용합니다.\n", branch)
+						}
+					} else {
+						fmt.Printf("⚠️  경고: %s 브랜치를 찾을 수 없습니다.\n", branch)
+						if !utils.ConfirmWithDefault("계속 진행", false) {
+							os.Exit(0)
+						}
+					}
+				}
+			}
+		}
+	} else {
+		// 인자가 없으면 대화형 모드
+		currentBranch := utils.GetCurrentBranch()
+		if !quietMode {
+			fmt.Printf("📍 현재 브랜치: %s\n", currentBranch)
+		}
+		
+		targetBranch := getBranchInput("비교할 브랜치명을 입력하세요")
+		branches = []string{currentBranch, targetBranch}
+	}
 	
-	fmt.Printf("\n📊 %s와 %s의 병합점을 찾는 중...\n\n", currentBranch, targetBranch)
-	
-	// 머지베이스 찾기 시도
-	mergeBase, depth, err := findMergeBase(currentBranch, targetBranch)
-	
-	if err != nil {
-		fmt.Printf("❌ 오류: 병합점을 찾을 수 없습니다.\n")
-		fmt.Printf("   상세: %v\n", err)
+	// 브랜치가 2개 미만이면 에러
+	if len(branches) < 2 {
+		fmt.Println("❌ 오류: 최소 2개의 브랜치가 필요합니다.")
 		os.Exit(1)
 	}
 	
-	// 결과 표시
-	fmt.Println("✅ 병합점 찾기 완료!")
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━")
-	fmt.Printf("🔗 머지베이스: %s\n", mergeBase)
-	
-	if depth > 0 {
-		fmt.Printf("📏 필요했던 depth: %d개 커밋\n", depth)
+	// 2개 브랜치 병합점 찾기
+	if len(branches) == 2 {
+		findAndShowMergeBase(branches[0], branches[1], quietMode)
 	} else {
-		fmt.Println("📏 추가 히스토리 확장 없이 찾음")
+		// 3개 이상의 브랜치일 경우 모든 조합에 대해 병합점 찾기
+		if !quietMode {
+			fmt.Printf("\n📊 %d개 브랜치의 모든 병합점 분석 중...\n", len(branches))
+			fmt.Println("━━━━━━━━━━━━━━━━━━━━━")
+		}
+		
+		// 모든 브랜치 쌍에 대해 병합점 찾기
+		for i := 0; i < len(branches); i++ {
+			for j := i + 1; j < len(branches); j++ {
+				if !quietMode {
+					fmt.Printf("\n▶ %s ↔ %s\n", branches[i], branches[j])
+				}
+				findAndShowMergeBase(branches[i], branches[j], quietMode)
+			}
+		}
+		
+		// 모든 브랜치의 공통 병합점 찾기 (octopus merge base)
+		if len(branches) > 2 {
+			findCommonMergeBase(branches, quietMode)
+		}
 	}
-	
-	// 커밋 정보 표시
-	showCommitInfo(mergeBase)
-	
-	// 각 브랜치까지의 거리 표시
-	showDistanceFromBase(currentBranch, targetBranch, mergeBase)
 }
 
 func getBranchInput(prompt string) string {
@@ -226,4 +273,75 @@ func getDistanceFromBase(branch, base string) string {
 	}
 	
 	return fmt.Sprintf("%d개 커밋 ahead", count)
+}
+
+func findAndShowMergeBase(branch1, branch2 string, quietMode bool) {
+	if !quietMode {
+		fmt.Printf("   %s와 %s의 병합점을 찾는 중...\n", branch1, branch2)
+	}
+	
+	// 머지베이스 찾기 시도
+	mergeBase, depth, err := findMergeBase(branch1, branch2)
+	
+	if err != nil {
+		fmt.Printf("❌ 오류: 병합점을 찾을 수 없습니다 (%s ↔ %s)\n", branch1, branch2)
+		if !quietMode {
+			fmt.Printf("   상세: %v\n", err)
+		}
+		return
+	}
+	
+	// 결과 표시
+	if quietMode {
+		// 조용한 모드에서는 커밋 해시만 출력
+		fmt.Println(mergeBase)
+	} else {
+		fmt.Printf("   🔗 머지베이스: %s\n", mergeBase)
+		
+		if depth > 0 {
+			fmt.Printf("   📏 필요했던 depth: %d개 커밋\n", depth)
+		} else {
+			fmt.Printf("   📏 추가 히스토리 확장 없이 찾음\n")
+		}
+		
+		// 거리 정보 표시
+		distance1 := getDistanceFromBase(branch1, mergeBase)
+		distance2 := getDistanceFromBase(branch2, mergeBase)
+		fmt.Printf("   📐 거리: %s(%s), %s(%s)\n", branch1, distance1, branch2, distance2)
+	}
+}
+
+func findCommonMergeBase(branches []string, quietMode bool) {
+	if !quietMode {
+		fmt.Printf("\n🔍 모든 브랜치의 공통 병합점 찾기...\n")
+	}
+	
+	// git merge-base --octopus 사용
+	args := append([]string{"merge-base", "--octopus"}, branches...)
+	cmd := exec.Command("git", args...)
+	output, err := cmd.Output()
+	
+	if err != nil {
+		if !quietMode {
+			fmt.Printf("❌ 공통 병합점을 찾을 수 없습니다.\n")
+		}
+		return
+	}
+	
+	commonBase := strings.TrimSpace(string(output))
+	if commonBase != "" {
+		if quietMode {
+			fmt.Printf("COMMON: %s\n", commonBase)
+		} else {
+			fmt.Printf("✅ 공통 병합점: %s\n", commonBase)
+			showCommitInfo(commonBase)
+			
+			// 각 브랜치까지의 거리 표시
+			fmt.Printf("\n📏 공통 병합점으로부터의 거리:\n")
+			for _, branch := range branches {
+				distance := getDistanceFromBase(branch, commonBase)
+				fmt.Printf("   %s: %s\n", branch, distance)
+			}
+		}
+	}
 }
