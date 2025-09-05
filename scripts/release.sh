@@ -106,7 +106,8 @@ cp "$FORMULA_FILE" "$FORMULA_FILE.bak"
 # 버전 업데이트
 sed -i '' "s/version \".*\"/version \"${VERSION}\"/" "$FORMULA_FILE"
 
-# URL 업데이트
+# URL 업데이트 - homebrew-workingcli 저장소 사용
+sed -i '' "s|https://github.com/yoonhwan-neowiz/WorkingCli/releases|https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases|g" "$FORMULA_FILE"
 sed -i '' "s|download/v[0-9.]*|download/${TAG_NAME}|g" "$FORMULA_FILE"
 
 # SHA256 체크섬 업데이트
