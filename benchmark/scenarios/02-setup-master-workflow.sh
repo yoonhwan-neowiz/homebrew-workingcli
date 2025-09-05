@@ -102,11 +102,6 @@ run_scenario() {
         $GA_CMD opt submodule set-branch-scope $WORKFLOW_BRANCHES -q 2>&1 | tee -a "$LOG_FILE"
     fi
     
-    # branch-scope 설정 후 추가 브랜치 fetch
-    log_output "추가 브랜치 fetch 중..."
-    git fetch origin live59.b/5904.7:refs/remotes/origin/live59.b/5904.7 2>&1 | tee -a "$LOG_FILE" || true
-    git fetch origin live59.b/5621.20:refs/remotes/origin/live59.b/5621.20 2>&1 | tee -a "$LOG_FILE" || true
-    
     local scope_duration=$(end_timer)
     measure_step "BRANCH_SCOPE" 1 $scope_duration
     calculate_delta $baseline_git $LAST_GIT_STORE $baseline_wt $LAST_WORKTREE $baseline_total $LAST_TOTAL $scope_duration
