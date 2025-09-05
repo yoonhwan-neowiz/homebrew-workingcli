@@ -62,7 +62,11 @@ PLATFORMS=(
     "linux_arm64"
 )
 
-declare -A SHA256_HASHES
+# SHA256 체크섬을 저장할 변수들 개별 선언
+SHA256_darwin_amd64=""
+SHA256_darwin_arm64=""
+SHA256_linux_amd64=""
+SHA256_linux_arm64=""
 
 for platform in "${PLATFORMS[@]}"; do
     BINARY_PATH="$PROJECT_ROOT/build/${platform}/${BINARY_NAME}"
@@ -83,7 +87,8 @@ for platform in "${PLATFORMS[@]}"; do
             SHA256=$(sha256sum "$ARCHIVE_PATH" | cut -d ' ' -f 1)
         fi
         
-        SHA256_HASHES[$platform]=$SHA256
+        # platform별로 변수에 저장
+        eval "SHA256_${platform}=\"$SHA256\""
         echo "    SHA256: $SHA256"
     else
         echo -e "${YELLOW}  Skipping ${platform} (binary not found)${NC}"
@@ -105,20 +110,20 @@ sed -i '' "s/version \".*\"/version \"${VERSION}\"/" "$FORMULA_FILE"
 sed -i '' "s|download/v[0-9.]*|download/${TAG_NAME}|g" "$FORMULA_FILE"
 
 # SHA256 체크섬 업데이트
-if [ -n "${SHA256_HASHES[darwin_arm64]}" ]; then
-    sed -i '' "s/PENDING_ARM64_SHA256/${SHA256_HASHES[darwin_arm64]}/" "$FORMULA_FILE"
+if [ -n "${SHA256_darwin_arm64}" ]; then
+    sed -i '' "s/PENDING_ARM64_SHA256/${SHA256_darwin_arm64}/" "$FORMULA_FILE"
 fi
 
-if [ -n "${SHA256_HASHES[darwin_amd64]}" ]; then
-    sed -i '' "s/PENDING_AMD64_SHA256/${SHA256_HASHES[darwin_amd64]}/" "$FORMULA_FILE"
+if [ -n "${SHA256_darwin_amd64}" ]; then
+    sed -i '' "s/PENDING_AMD64_SHA256/${SHA256_darwin_amd64}/" "$FORMULA_FILE"
 fi
 
-if [ -n "${SHA256_HASHES[linux_arm64]}" ]; then
-    sed -i '' "s/PENDING_LINUX_ARM64_SHA256/${SHA256_HASHES[linux_arm64]}/" "$FORMULA_FILE"
+if [ -n "${SHA256_linux_arm64}" ]; then
+    sed -i '' "s/PENDING_LINUX_ARM64_SHA256/${SHA256_linux_arm64}/" "$FORMULA_FILE"
 fi
 
-if [ -n "${SHA256_HASHES[linux_amd64]}" ]; then
-    sed -i '' "s/PENDING_LINUX_AMD64_SHA256/${SHA256_HASHES[linux_amd64]}/" "$FORMULA_FILE"
+if [ -n "${SHA256_linux_amd64}" ]; then
+    sed -i '' "s/PENDING_LINUX_AMD64_SHA256/${SHA256_linux_amd64}/" "$FORMULA_FILE"
 fi
 
 # 5. Git 커밋
@@ -158,8 +163,9 @@ echo "   brew install ga"
 echo -e "${YELLOW}📋 SHA256 Checksums:${NC}"
 echo "================================="
 for platform in "${PLATFORMS[@]}"; do
-    if [ -n "${SHA256_HASHES[$platform]}" ]; then
-        echo "${platform}: ${SHA256_HASHES[$platform]}"
+    eval "SHA256_VAL=\$SHA256_${platform}"
+    if [ -n "${SHA256_VAL}" ]; then
+        echo "${platform}: ${SHA256_VAL}"
     fi
 done
 echo "================================="
