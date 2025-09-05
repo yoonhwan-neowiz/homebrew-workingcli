@@ -66,6 +66,14 @@ parse_options() {
                 USE_CLONE=true
                 shift
                 ;;
+            --clean-mode)
+                CLEAN_MODE="$2"
+                if [[ "$2" != "safe" && "$2" != "full" ]]; then
+                    echo "오류: --clean-mode는 'safe' 또는 'full'만 가능합니다"
+                    exit 1
+                fi
+                shift 2
+                ;;
             --help|-h)
                 show_help
                 exit 0
@@ -96,6 +104,9 @@ show_help() {
   --branches "list"     branch-scope 브랜치 목록
   --source PATH         템플릿 소스 디렉토리 (기본: ~/Work/DesignB4)
   --use-clone           기존 clone 방식 사용 (호환성)
+  --clean-mode [safe|full] Clean 모드 설정 (기본: safe)
+                        safe: 기본 정리만 수행
+                        full: 완전한 객체 제거 및 최적화
   --quiet, -q           조용한 모드
   --help, -h            도움말 표시
 
