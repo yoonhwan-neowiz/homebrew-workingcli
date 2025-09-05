@@ -1166,17 +1166,11 @@ func cleanupRemoteTags() {
 	}
 }
 
-// SetFetchRefspecForSubmodule sets fetch refspec for a submodule
+// SetFetchRefspecForSubmodule modifies the fetch refspec of a submodule to only fetch
+// specific branches, significantly speeding up submodule updates.
 func SetFetchRefspecForSubmodule(submodulePath string, branches []string) error {
 	if len(branches) == 0 {
 		return fmt.Errorf("브랜치 목록이 비어있습니다")
-	}
-
-	// 백업 디렉토리 생성 (fetch refspec 백업용)
-	timestamp := time.Now().Format("20060102_150405")
-	backupBase := filepath.Join(submodulePath, ".git", "gaconfig", "backups", timestamp)
-	if err := os.MkdirAll(backupBase, 0755); err != nil {
-		return fmt.Errorf("백업 디렉토리 생성 실패: %v", err)
 	}
 
 	// 기존 fetch refspec 모두 제거

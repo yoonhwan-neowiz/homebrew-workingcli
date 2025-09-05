@@ -77,6 +77,8 @@ func executeCloneMaster(args []string) {
 	fmt.Println("1️⃣ Master 브랜치만 Shallow Clone (no-checkout)...")
 	cloneCmd := exec.Command("git", "clone", 
 		"--depth=1",
+		"--single-branch",  // master 브랜치만 가져옴
+		"--branch", "master",
 		"--no-checkout",  // 파일을 아직 체크아웃하지 않음
 		url, 
 		folder)
@@ -129,25 +131,27 @@ func executeCloneMaster(args []string) {
 	}
 	fmt.Println("   ✅ 파일 체크아웃 완료")
 	
-	// 4. 서브모듈 초기화 (shallow)
-	fmt.Println("\n4️⃣ 서브모듈 초기화 (shallow)...")
+	// 4. 서브모듈 초기화 및 최적화
+	fmt.Println("\n4️⃣ 서브모듈 초기화 및 최적화...")
 	
-	// .gitmodules 파일 존재 확인
-	if _, err := os.Stat(".gitmodules"); err == nil {
-		submoduleCmd := exec.Command("git", "submodule", "update", 
-			"--init",
-			"--depth=1",
-			"--recursive")
-		submoduleCmd.Stdout = os.Stdout
-		submoduleCmd.Stderr = os.Stderr
-		
-		if err := submoduleCmd.Run(); err != nil {
-			fmt.Printf("⚠️ 서브모듈 초기화 실패 (서브모듈이 없을 수 있음): %v\n", err)
+	// 한 줄로 서브모듈 초기화 + shallow clone + single-branch 설정
+	updateCmd := exec.Command("git", "submodule", "update", 
+		"--init",           // 초기화
+		"--recursive",      // 재귀적으로 모든 서브모듈
+		"--depth=1",        // shallow clone
+		"--single-branch")  // master 브랜치만
+	updateCmd.Stdout = os.Stdout
+	updateCmd.Stderr = os.Stderr
+	
+	if err := updateCmd.Run(); err != nil {
+		// 서브모듈이 없거나 실패한 경우
+		if strings.Contains(err.Error(), "No submodule mapping") {
+			fmt.Println("   ℹ️ 서브모듈이 없습니다.")
 		} else {
-			fmt.Println("   ✅ 서브모듈 초기화 완료 (shallow)")
+			fmt.Printf("⚠️ 서브모듈 업데이트 실패: %v\n", err)
 		}
 	} else {
-		fmt.Println("   ℹ️ 서브모듈이 없습니다.")
+		fmt.Println("   ✅ 서브모듈 최적화 완료 (master only, shallow, single-branch)")
 	}
 	
 	// 5. 성능 설정 적용
@@ -208,6 +212,21 @@ func executeCloneMaster(args []string) {
 		fmt.Printf("리모트 브랜치: %d개\n", len(remoteBranches))
 		for _, branch := range remoteBranches {
 			fmt.Printf("  %s\n", strings.TrimSpace(branch))
+		}
+	}
+	
+	// 서브모듈 전체 reset --hard 수행 (최종 정리)
+	if _, err := os.Stat(".gitmodules"); err == nil {
+		fmt.Println("\n🔄 서브모듈 전체 reset --hard 수행...")
+		resetCmd := exec.Command("git", "submodule", "foreach", "--recursive", 
+			"git", "reset", "--hard")
+		resetCmd.Stdout = os.Stdout
+		resetCmd.Stderr = os.Stderr
+		
+		if err := resetCmd.Run(); err != nil {
+			fmt.Printf("⚠️ 서브모듈 reset 실패: %v\n", err)
+		} else {
+			fmt.Println("✅ 서브모듈 reset 완료")
 		}
 	}
 	

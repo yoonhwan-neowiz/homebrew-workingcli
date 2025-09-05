@@ -131,11 +131,16 @@ func runShallow(args []string) {
 		branchListCmd := exec.Command("git", "branch", "--format=%(refname:short)")
 		if branchOutput, err := branchListCmd.Output(); err == nil {
 			subBranches := strings.Split(strings.TrimSpace(string(branchOutput)), "\n")
-			for _, subBranch := range subBranches {
+			totalBranches := len(subBranches)
+			fmt.Printf("   │  └─ 총 %d개 브랜치 발견\n", totalBranches)
+			
+			for i, subBranch := range subBranches {
 				subBranch = strings.TrimSpace(subBranch)
 				if subBranch == "" {
 					continue
 				}
+				
+				fmt.Printf("   │     ├─ [%d/%d] %s 브랜치 처리 중...", i+1, totalBranches, subBranch)
 				
 				// 각 브랜치를 remote와 동기화
 				checkoutCmd := exec.Command("git", "checkout", subBranch, "-q")
@@ -145,30 +150,57 @@ func runShallow(args []string) {
 					if err := remoteVerifyCmd.Run(); err == nil {
 						// reset --hard origin/branch로 shallow 상태 강제 적용
 						resetCmd := exec.Command("git", "reset", "--hard", "origin/"+subBranch)
-						resetCmd.Run()
+						if err := resetCmd.Run(); err == nil {
+							fmt.Printf(" ✓\n")
+						} else {
+							fmt.Printf(" ✗ (reset 실패)\n")
+						}
+					} else {
+						fmt.Printf(" - (remote 없음)\n")
 					}
+				} else {
+					fmt.Printf(" ✗ (checkout 실패)\n")
 				}
 			}
 			
 			// 원래 브랜치/커밋으로 돌아가기
+			fmt.Printf("   │  └─ 원래 상태로 복귀 중...")
 			if currentBranch == "HEAD" {
 				// Detached HEAD 상태였다면 원래 커밋으로
 				checkoutSHACmd := exec.Command("git", "checkout", currentHeadSHA, "-q")
-				checkoutSHACmd.Run()
+				if err := checkoutSHACmd.Run(); err == nil {
+					fmt.Printf(" ✓ (커밋: %s)\n", currentHeadSHA[:7])
+				} else {
+					fmt.Printf(" ✗ (복귀 실패)\n")
+				}
 			} else {
 				// 브랜치였다면 브랜치로
 				checkoutBackCmd := exec.Command("git", "checkout", currentBranch, "-q")
-				checkoutBackCmd.Run()
+				if err := checkoutBackCmd.Run(); err == nil {
+					fmt.Printf(" ✓ (브랜치: %s)\n", currentBranch)
+				} else {
+					fmt.Printf(" ✗ (복귀 실패)\n")
+				}
 			}
 		}
 		
 		// 3. reflog 정리로 이전 히스토리 참조 제거
+		fmt.Printf("   ├─ Reflog 정리 중...")
 		reflogCmd := exec.Command("git", "reflog", "expire", "--expire=now", "--all")
-		reflogCmd.Run()
+		if err := reflogCmd.Run(); err == nil {
+			fmt.Printf(" ✓\n")
+		} else {
+			fmt.Printf(" ✗ (정리 실패)\n")
+		}
 		
 		// 4. gc 실행으로 오래된 객체 완전 정리 (--aggressive 추가)
+		fmt.Printf("   ├─ GC로 객체 정리 중 (aggressive)...")
 		gcCmd := exec.Command("git", "gc", "--prune=now", "--aggressive")
-		gcCmd.Run()
+		if err := gcCmd.Run(); err == nil {
+			fmt.Printf(" ✓\n")
+		} else {
+			fmt.Printf(" ✗ (GC 실패)\n")
+		}
 		
 		fmt.Printf("✅ %s: Shallow Clone으로 변환 완료 (depth=%d)\n", path, depth)
 		

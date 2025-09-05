@@ -97,10 +97,13 @@ func acquireLock(quietMode bool) error {
 		return fmt.Errorf("lock 파일 생성 실패: %w", err)
 	}
 	
-	// Lock exists, wait briefly and retry a few times
+	// Lock exists, use exponential backoff for retries
 	maxRetries := 5
+	backoff := 10 * time.Millisecond // Start with 10ms
+	
 	for i := 0; i < maxRetries; i++ {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(backoff)
+		backoff *= 2 // Double the backoff time: 10ms, 20ms, 40ms, 80ms, 160ms
 		
 		file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 		if err == nil {
@@ -214,10 +217,11 @@ func resolveRef(ref string) (*RefInfo, error) {
 
 // deepenRepository progressively expands the shallow repository
 func deepenRepository(refs []*RefInfo, quietMode bool) error {
-	// Progressive depth values
-	depths := []int{50, 100, 200, 500, 1000, 2000}
+	// Fixed increment of 100
+	increment := 100
+	maxDepth := 10000
 	
-	for _, depth := range depths {
+	for depth := increment; depth <= maxDepth; depth += increment {
 		if !quietMode {
 			fmt.Printf("   📊 히스토리 확장 중... (depth: %d)\n", depth)
 		}
@@ -244,8 +248,7 @@ func deepenRepository(refs []*RefInfo, quietMode bool) error {
 			}
 		}
 		
-		// Give git time to process the update
-		time.Sleep(100 * time.Millisecond)
+		// Git operation complete - no artificial delay needed
 		
 		// Check if we can find merge-base now
 		allBranches := make([]string, len(refs))
