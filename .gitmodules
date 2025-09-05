@@ -1,3 +1,6 @@
 [submodule "external/cobra"]
 	path = external/cobra
 	url = https://github.com/spf13/cobra.git
+[submodule "homebrew-workingcli"]
+	path = homebrew-workingcli
+	url = https://github.com/yoonhwan-neowiz/homebrew-workingcli
