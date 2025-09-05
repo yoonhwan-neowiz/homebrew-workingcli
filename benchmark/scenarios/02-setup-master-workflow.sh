@@ -25,7 +25,7 @@ run_scenario() {
     LAST_TOTAL=0
     
     # 단계 계산
-    local total_steps=7
+    local total_steps=6
     
     # Step 1: 저장소 초기화 (Clone Master 방식)
     show_progress 1 $total_steps "저장소 초기화 (Clone Master)"
@@ -42,14 +42,10 @@ run_scenario() {
     log_output "Master 브랜치 클론 중..."
     log_color "${CYAN}Clone master 진행 상황이 표시됩니다...${NC}"
     
-    # 실제 원격 저장소가 있는 경우 사용
+    # ga opt setup clone-master 명령 사용
     if [ -n "$TEST_REPO" ] && [ "$USE_CLONE" = true ]; then
-        GIT_TRACE=1 GIT_CURL_VERBOSE=1 git clone \
-            --single-branch \
-            --branch master \
-            --progress \
-            --verbose \
-            "$TEST_REPO" "$TEST_DIR" 2>&1 | tee -a "$LOG_FILE"
+        log_output "ga opt setup clone-master 명령으로 클론..."
+        $GA_CMD opt setup clone-master "$TEST_REPO" "$TEST_DIR" 2>&1 | tee -a "$LOG_FILE"
     else
         # 로컬 템플릿에서 시뮬레이션
         local SOURCE_DIR="${SOURCE_TEMPLATE:-$HOME/Work/DesignB4}"
@@ -81,6 +77,8 @@ run_scenario() {
     local init_duration=$(end_timer)
     log_color "${GREEN}✓ Clone Master 완료 (${init_duration}s)${NC}"
     
+    # clone-master 명령이 이미 서브모듈을 처리했으므로 추가 작업 불필요
+    
     # Step 2: Baseline 측정
     show_progress 2 $total_steps "Baseline 측정"
     measure_step "BASELINE" 0 0
@@ -94,18 +92,20 @@ run_scenario() {
     
     start_timer
     
-    # 원격 브랜치 fetch (master 외 추가 브랜치)
+    # 메인 저장소 branch-scope
+    log_output "메인 저장소 branch-scope 적용 중..."
+    $GA_CMD opt quick set-branch-scope $WORKFLOW_BRANCHES 2>&1 | tee -a "$LOG_FILE"
+    
+    # 서브모듈 branch-scope 동시 적용
+    if [ -f ".gitmodules" ]; then
+        log_output "서브모듈 branch-scope 설정..."
+        $GA_CMD opt submodule set-branch-scope $WORKFLOW_BRANCHES -q 2>&1 | tee -a "$LOG_FILE"
+    fi
+    
+    # branch-scope 설정 후 추가 브랜치 fetch
     log_output "추가 브랜치 fetch 중..."
     git fetch origin live59.b/5904.7:refs/remotes/origin/live59.b/5904.7 2>&1 | tee -a "$LOG_FILE" || true
     git fetch origin live59.b/5621.20:refs/remotes/origin/live59.b/5621.20 2>&1 | tee -a "$LOG_FILE" || true
-    
-    # 메인 저장소 branch-scope
-    log_output "메인 저장소 branch-scope 적용 중..."
-    $GA_CMD opt quick set-branch-scope $WORKFLOW_BRANCHES -q 2>&1 | tee -a "$LOG_FILE"
-    
-    # 서브모듈 branch-scope
-    log_output "서브모듈 branch-scope 적용 중..."
-    $GA_CMD opt submodule set-branch-scope $WORKFLOW_BRANCHES -q 2>&1 | tee -a "$LOG_FILE"
     
     local scope_duration=$(end_timer)
     measure_step "BRANCH_SCOPE" 1 $scope_duration
@@ -114,9 +114,10 @@ run_scenario() {
     local after_scope_wt=$LAST_WORKTREE
     local after_scope_total=$LAST_TOTAL
     
-    # Step 4: Shallow depth 1 적용
+    # Step 4: Shallow depth 1 적용 (메인 + 서브모듈 통합)
     show_progress 4 $total_steps "Shallow 최적화 (depth=1)"
     apply_shallow 1
+    
     local shallow_duration=$OPT_DURATION
     measure_step "SHALLOW" 2 $shallow_duration
     calculate_delta $after_scope_git $LAST_GIT_STORE $after_scope_wt $LAST_WORKTREE $after_scope_total $LAST_TOTAL $shallow_duration
@@ -124,63 +125,27 @@ run_scenario() {
     local after_shallow_wt=$LAST_WORKTREE
     local after_shallow_total=$LAST_TOTAL
     
-    # Step 5: Local Checkout
-    show_progress 5 $total_steps "Local Checkout"
+    # Step 5: Local Checkout (Shallow 과정에서 이미 완료됨)
+    show_progress 5 $total_steps "Local Checkout 확인"
     
     start_timer
     
-    # 각 브랜치 checkout
-    log_output "브랜치 체크아웃 중..."
+    # Shallow 최적화 과정에서 이미 모든 브랜치가 체크아웃되었음
+    log_output "Shallow 최적화 과정에서 브랜치 체크아웃 완료"
+    log_output "현재 브랜치: $(git branch --show-current)"
     
-    # master는 이미 체크아웃 되어 있음
-    log_output "master 브랜치는 이미 체크아웃됨"
+    # 체크아웃된 브랜치 목록 확인
+    log_output "체크아웃된 브랜치:"
+    git branch | tee -a "$LOG_FILE"
     
-    # 추가 브랜치들 로컬로 체크아웃
-    for branch in origin/live59.b/5904.7 origin/live59.b/5621.20; do
-        local local_branch="${branch#origin/}"
-        log_output "Checkout 브랜치: $local_branch"
-        
-        git checkout -b "$local_branch" "$branch" 2>&1 | tee -a "$LOG_FILE" || {
-            log_color "${YELLOW}⚠ $local_branch 체크아웃 실패 - 이미 존재할 수 있음${NC}"
-            git checkout "$local_branch" 2>&1 | tee -a "$LOG_FILE" || true
-        }
-    done
-    
-    # master로 돌아가기
+    # master로 돌아가기 (안전을 위해)
     git checkout master 2>&1 | tee -a "$LOG_FILE"
     
     local checkout_duration=$(end_timer)
-    log_color "${GREEN}✓ Checkout 완료 (${checkout_duration}s)${NC}"
+    log_color "${GREEN}✓ Checkout 확인 완료 (${checkout_duration}s)${NC}"
     
-    # Step 6: Submodule 동일 작업
-    show_progress 6 $total_steps "Submodule 처리"
-    
-    start_timer
-    
-    # 서브모듈 초기화 및 최적화
-    log_output "서브모듈 초기화 중..."
-    
-    # 서브모듈 초기화 (처음 클론한 경우)
-    git submodule init 2>&1 | tee -a "$LOG_FILE" || true
-    
-    # ga opt submodule update 사용
-    $GA_CMD opt submodule update -f 2>&1 | tee -a "$LOG_FILE" || {
-        log_color "${YELLOW}⚠ 서브모듈 초기화 실패 - 계속 진행${NC}"
-    }
-    
-    # 서브모듈에도 shallow 적용
-    log_output "서브모듈 shallow 적용 중..."
-    $GA_CMD opt submodule shallow 1 -q 2>&1 | tee -a "$LOG_FILE"
-    
-    # 서브모듈에도 branch-scope 적용
-    log_output "서브모듈 branch-scope 적용 중..."
-    $GA_CMD opt submodule set-branch-scope $WORKFLOW_BRANCHES -q 2>&1 | tee -a "$LOG_FILE"
-    
-    local submodule_duration=$(end_timer)
-    log_color "${GREEN}✓ Submodule 처리 완료 (${submodule_duration}s)${NC}"
-    
-    # Step 7: Auto Find Merge-Base
-    show_progress 7 $total_steps "Auto Find Merge-Base"
+    # Step 6: Auto Find Merge-Base
+    show_progress 6 $total_steps "Auto Find Merge-Base"
     
     start_timer
     
@@ -203,14 +168,14 @@ run_scenario() {
     log_color "${GREEN}✓ Auto Find Merge-Base 완료 (${auto_duration}s)${NC}"
     
     # 최종 측정
-    measure_step "FINAL" 7 $auto_duration
+    measure_step "FINAL" 6 $auto_duration
     calculate_delta $after_shallow_git $LAST_GIT_STORE $after_shallow_wt $LAST_WORKTREE $after_shallow_total $LAST_TOTAL 0
     
     # 최종 결과 출력
     log_color "${CYAN}========================================${NC}"
     log_color "${GREEN}시나리오 완료: $SCENARIO_NAME${NC}"
     log_output "총 절감: $(bytes_to_human $TOTAL_SAVED)"
-    log_output "전체 소요 시간: $(( init_duration + scope_duration + shallow_duration + checkout_duration + submodule_duration + auto_duration ))s"
+    log_output "전체 소요 시간: $(( init_duration + scope_duration + shallow_duration + checkout_duration + auto_duration ))s"
     log_color "${CYAN}========================================${NC}"
 }
 
