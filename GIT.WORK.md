@@ -12,13 +12,13 @@
 ### 1. `ga opt quick shallow [depth]`
 ### 2. `ga opt quick set-branch-scope`
 ### 3. `ga opt quick status`
-### 4. `ga opt setup clone-master`
-### 5. `ga opt clone [repo_url] [repo_path]`
-### 6. `ga opt setup performance`
-### 7. `ga opt quick auto`
-### 8. `ga opt quick unshallow`
-### 9. `ga opt quick clear-branch-scope`
-### 10. `ga opt submodule shallow [depth]`
+### 4. `ga opt setup clone [repo_url] [repo_path]`
+### 5. `ga opt setup performance`
+### 6. `ga opt quick auto`
+### 7. `ga opt quick unshallow`
+### 8. `ga opt quick clear-branch-scope`
+### 9. `ga opt submodule shallow [depth]`
+### 10. `ga opt submodule set-branch-scope`
 
 ## 📊 실무 워크플로우 시나리오
 
@@ -83,7 +83,7 @@ gitGraph
 
 ```bash
 # 옵션 1: 최적화된 클론 (master만, shallow 1)
-ga opt clone https://github.com/user/repo.git my-project
+ga opt setup clone https://github.com/user/repo.git my-project
 
 # 옵션 2: 기존 저장소 최적화
 # 1. 작업할 브랜치만 노출 (main + 작업 브랜치)
