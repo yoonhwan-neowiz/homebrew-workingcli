@@ -207,6 +207,8 @@ func IsSourceCodeFile(filename string) bool {
 		".rs":    true,
 		".scala": true,
 		".md":    true,
+		".sh":    true,
+		".command":    true,
 	}
 	return sourceExts[ext]
 }

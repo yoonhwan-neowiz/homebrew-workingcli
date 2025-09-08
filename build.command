@@ -21,9 +21,16 @@ done
 
 # 빌드 환경 설정
 BINARY_NAME="ga"
-VERSION="0.1.0"
 BUILD_TIME=$(date +%Y%m%d_%H%M%S)
 COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+
+# 테스트 버전 (기본값)
+if [ -n "$VERSION" ]; then
+    VERSION=$VERSION
+else
+    VERSION="0.1.0"
+fi
 
 # 색상 정의
 GREEN='\033[0;32m'
