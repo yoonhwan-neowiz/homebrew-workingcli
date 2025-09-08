@@ -172,8 +172,60 @@ func executeCloneSlim(args []string) {
 		fmt.Println("   ✅ 서브모듈 초기화 완료")
 	}
 	
-	// 5. 성능 설정 적용
-	fmt.Println("\n5️⃣ Git 성능 최적화 설정...")
+	// 5. 태그 제거 및 fetch 차단
+	fmt.Println("\n5️⃣ 태그 최적화 (No-Tag 모드)...")
+	
+	// 로컬 태그 개수 확인
+	tagCountCmd := exec.Command("git", "tag")
+	tagOutput, _ := tagCountCmd.Output()
+	var tagCount int
+	if len(tagOutput) > 0 {
+		tags := strings.Split(strings.TrimSpace(string(tagOutput)), "\n")
+		for _, tag := range tags {
+			if strings.TrimSpace(tag) != "" {
+				tagCount++
+			}
+		}
+	}
+	
+	if tagCount > 0 {
+		fmt.Printf("   🏷️ %d개의 태그 삭제 중...", tagCount)
+		// 모든 태그 삭제
+		if tags := strings.Split(strings.TrimSpace(string(tagOutput)), "\n"); len(tags) > 0 {
+			for _, tag := range tags {
+				tag = strings.TrimSpace(tag)
+				if tag != "" {
+					delCmd := exec.Command("git", "tag", "-d", tag)
+					delCmd.Run() // 에러 무시
+				}
+			}
+		}
+		fmt.Println(" 완료")
+	}
+	
+	// 태그 fetch 차단 설정
+	fmt.Print("   🚫 원격 태그 fetch 차단 설정...")
+	blockTagCmd := exec.Command("git", "config", "remote.origin.tagOpt", "--no-tags")
+	if err := blockTagCmd.Run(); err != nil {
+		fmt.Printf(" 실패: %v\n", err)
+	} else {
+		fmt.Println(" 완료")
+	}
+	
+	// 서브모듈도 태그 제거
+	if _, err := os.Stat(".gitmodules"); err == nil {
+		fmt.Println("   🔄 서브모듈 태그 제거 중...")
+		submoduleNoTagCmd := exec.Command("git", "submodule", "foreach", "--recursive",
+			"git tag -l | xargs -r git tag -d && git config remote.origin.tagOpt --no-tags")
+		if err := submoduleNoTagCmd.Run(); err != nil {
+			fmt.Printf("   ⚠️ 서브모듈 태그 제거 실패: %v\n", err)
+		} else {
+			fmt.Println("   ✅ 서브모듈 태그 제거 완료")
+		}
+	}
+
+	// 6. 성능 설정 적용
+	fmt.Println("\n6️⃣ Git 성능 최적화 설정...")
 	performanceConfigs := [][]string{
 		// 기존 최적화 설정
 		{"core.commitGraph", "true"},

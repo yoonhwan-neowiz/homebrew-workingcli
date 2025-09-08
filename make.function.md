@@ -1,6 +1,6 @@
 # Git 저장소 최적화 명령어 구현 가이드
 
-## 📊 구현 진행률: 33/33 (100%) ✅
+## 📊 구현 진행률: 33/37 (89%) 🚧
 
 ## 🎯 핵심 구현 전략 - AI 협업 워크플로우
 
@@ -133,7 +133,7 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 이 문서는 Git 저장소 최적화를 위한 33개 명령어의 구현 상세를 담고 있습니다.
 각 명령어는 PRD 기반으로 구체적인 구현 방법이 정의되어 있습니다.
 
-## 🎯 구현 진행 상황 (33/33)
+## 🎯 구현 진행 상황 (33/37)
 
 - [x] help.workflow - Git 최적화 워크플로우 가이드
 - [x] help.commands - 전체 명령어 목록
@@ -168,6 +168,10 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 - [x] submodule.unshallow - 서브모듈 히스토리 복원 (recursive)
 - [x] submodule.set-branch-scope - 서브모듈 브랜치 범위 설정 (sbs, scope, branch-limit)
 - [x] submodule.clear-branch-scope - 서브모듈 브랜치 범위 제거 (cbs, unscope, show-all)
+- [ ] quick.notag - 로컬 태그 삭제 및 원격 태그 fetch 차단
+- [ ] quick.alltag - 모든 원격 태그 복원
+- [ ] submodule.notag - 서브모듈 태그 삭제 및 fetch 차단 (recursive)
+- [ ] submodule.alltag - 서브모듈 태그 복원 (recursive)
 
 ---
 
@@ -189,6 +193,8 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 | `clear_filter_branch.go`  | `clear-filter`         | 브랜치 필터 제거           | ✅ 구현 완료 |
 | `shallow.go`              | `shallow`              | 히스토리 줄이기            | ✅ 구현 완료 |
 | `unshallow.go`            | `unshallow`            | 히스토리 복원             | ✅ 구현 완료 |
+| `notag.go`                | `notag`                | 태그 삭제 및 fetch 차단    | ⏳ 구현 예정 |
+| `alltag.go`               | `alltag`               | 모든 원격 태그 복원        | ⏳ 구현 예정 |
 
 #### Advanced 카테고리 (고급 최적화 기능)
 
@@ -222,6 +228,8 @@ ga opt submodule filter-branch # 서브모듈 브랜치 필터
 | `unshallow.go`     | `unshallow`     | 히스토리 복원 (recursive)    | ✅ 구현 완료 |
 | `set_branch_scope.go` | `set-branch-scope` | 브랜치 범위 설정         | ✅ 구현 완료 |
 | `clear_branch_scope.go` | `clear-branch-scope` | 범위 제거          | ✅ 구현 완료 |
+| `notag.go`         | `notag`         | 태그 삭제 및 fetch 차단      | ⏳ 구현 예정 |
+| `alltag.go`        | `alltag`        | 모든 원격 태그 복원          | ⏳ 구현 예정 |
 
 ---
 
@@ -725,6 +733,63 @@ ga opt quick to-slim
 2. 결과 확인
 ```
 
+### quick.notag (`src/cmd/optimized/quick/notag.go`)
+
+**상태**: ⏳ 구현 예정
+**목적**: 로컬 태그 삭제 및 원격 태그 fetch 차단
+**구현 내용**:
+
+```bash
+# 실행 순서:
+1. 현재 태그 개수 확인
+   git tag | wc -l
+
+2. 모든 로컬 태그 삭제
+   git tag -l | xargs git tag -d
+
+3. 원격 태그 fetch 차단 설정
+   git config remote.origin.tagOpt --no-tags
+
+4. 결과 확인
+   - 삭제된 태그 개수 표시
+   - .git 폴더 크기 변화 표시
+   - 태그 fetch 차단 상태 확인
+
+# 출력 형식:
+🏷️ 태그 최적화 (No-Tag 모드)
+━━━━━━━━━━━━━━━━━━
+삭제된 태그: N개
+.git 크기 변화: XX MB → YY MB (ZZ% 감소)
+태그 fetch: 차단됨 ❌
+```
+
+### quick.alltag (`src/cmd/optimized/quick/alltag.go`)
+
+**상태**: ⏳ 구현 예정
+**목적**: 모든 원격 태그 복원
+**구현 내용**:
+
+```bash
+# 실행 순서:
+1. 태그 필터 설정 제거
+   git config --unset remote.origin.tagOpt
+
+2. 모든 원격 태그 fetch
+   git fetch --tags
+
+3. 결과 확인
+   - 복원된 태그 개수 표시
+   - .git 폴더 크기 변화 표시
+   - 태그 fetch 상태 확인
+
+# 출력 형식:
+🏷️ 태그 복원 (All-Tag 모드)
+━━━━━━━━━━━━━━━━━━
+복원된 태그: N개
+.git 크기 변화: XX MB → YY MB
+태그 fetch: 활성화됨 ✅
+```
+
 ### advanced.check-shallow (`src/cmd/optimized/advanced/check_shallow.go`)
 
 **상태**: ✅ 구현 완료 (2025-08-27)
@@ -950,6 +1015,66 @@ ga opt submodule shallow 10     # depth=10으로 설정
    - 사용자 확인 프롬프트
    - 필터 제거
 3. 결과 확인 (모든 브랜치 표시)
+```
+
+### submodule.notag (`src/cmd/optimized/submodule/notag.go`)
+
+**상태**: ⏳ 구현 예정
+**목적**: 서브모듈의 로컬 태그 삭제 및 원격 태그 fetch 차단 (recursive)
+**구현 내용**:
+
+```bash
+# 모든 서브모듈에 대해 recursive로 적용
+
+1. 서브모듈 목록 확인
+   git submodule foreach --recursive
+
+2. 각 서브모듈에 대해:
+   - 현재 태그 개수 확인
+   - 모든 로컬 태그 삭제
+   - 원격 태그 fetch 차단 설정
+   - .git 크기 변화 측정
+
+3. 결과 요약:
+   - 서브모듈별 삭제된 태그 개수
+   - 전체 크기 감소량
+   - 성공/실패 카운트
+
+# 출력 형식:
+🏷️ 서브모듈 태그 최적화
+━━━━━━━━━━━━━━━━━━
+처리된 서브모듈: N개
+총 삭제된 태그: M개
+전체 크기 감소: XX MB
+```
+
+### submodule.alltag (`src/cmd/optimized/submodule/alltag.go`)
+
+**상태**: ⏳ 구현 예정
+**목적**: 서브모듈의 모든 원격 태그 복원 (recursive)
+**구현 내용**:
+
+```bash
+# 모든 서브모듈에 대해 recursive로 적용
+
+1. 서브모듈 목록 확인
+
+2. 각 서브모듈에 대해:
+   - 태그 필터 설정 제거
+   - 모든 원격 태그 fetch
+   - 복원된 태그 개수 확인
+
+3. 결과 요약:
+   - 서브모듈별 복원된 태그 개수
+   - 전체 크기 증가량
+   - 성공/실패 카운트
+
+# 출력 형식:
+🏷️ 서브모듈 태그 복원
+━━━━━━━━━━━━━━━━━━
+처리된 서브모듈: N개
+총 복원된 태그: M개
+전체 크기 증가: XX MB
 ```
 
 ---
@@ -1199,6 +1324,16 @@ feat(opt): implement unshallow - restore complete history
 test(opt): add tests for unshallow history restoration
 docs(opt): document unshallow full recovery
 
+# quick.notag
+feat(opt): implement notag - remove local tags and block remote fetch
+test(opt): add tests for notag tag deletion and blocking
+docs(opt): document notag tag optimization workflow
+
+# quick.alltag
+feat(opt): implement alltag - restore all remote tags
+test(opt): add tests for alltag tag restoration
+docs(opt): document alltag tag recovery process
+
 # advanced.check-shallow
 feat(opt): implement check-shallow - verify shallow status
 test(opt): add tests for check-shallow status detection
@@ -1262,6 +1397,16 @@ docs(opt): document submodule-filter-branch usage
 feat(opt): implement submodule-clear-filter - clear branch filters
 test(opt): add tests for submodule-clear-filter removal
 docs(opt): document submodule-clear-filter functionality
+
+# submodule.notag
+feat(opt): implement submodule-notag - remove submodule tags recursively
+test(opt): add tests for submodule-notag batch tag deletion
+docs(opt): document submodule-notag optimization
+
+# submodule.alltag
+feat(opt): implement submodule-alltag - restore all submodule tags
+test(opt): add tests for submodule-alltag batch restoration
+docs(opt): document submodule-alltag tag recovery
 ```
 
 ---

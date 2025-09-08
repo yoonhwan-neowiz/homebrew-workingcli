@@ -56,6 +56,8 @@ func NewOptimizedCmd() *cobra.Command {
 		quick.NewClearBranchScopeCmd(),  // Clear Branch Scope
 		quick.NewShallowCmd(),          // Shallow
 		quick.NewUnshallowCmd(),        // Unshallow
+		quick.NewNoTagCmd(),            // No Tag (태그 삭제)
+		quick.NewAllTagCmd(),           // All Tag (태그 복원)
 	)
 	
 	// Setup 카테고리
@@ -117,6 +119,10 @@ func NewOptimizedCmd() *cobra.Command {
 		// 브랜치 필터
 		submodule.NewSetBranchScopeCmd(),    // Set Branch Scope (submodule)
 		submodule.NewClearBranchScopeCmd(), // Clear Branch Scope (submodule)
+		
+		// 태그 관리
+		submodule.NewNoTagCmd(),            // No Tag (서브모듈 태그 삭제)
+		submodule.NewAllTagCmd(),           // All Tag (서브모듈 태그 복원)
 	)
 	
 	cmd.AddCommand(helpCmd, quickCmd, setupCmd, workspaceCmd, advancedCmd, submoduleCmd)
