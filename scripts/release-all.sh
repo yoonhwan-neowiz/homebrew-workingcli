@@ -95,10 +95,8 @@ if [ ! -f "$PROJECT_ROOT/build.command" ]; then
 fi
 
 # VERSION 환경변수로 빌드 실행
-export VERSION="$VERSION"
 echo -e "빌드 버전: ${GREEN}${VERSION}${NC}"
-bash "$PROJECT_ROOT/build.command"
-unset VERSION
+VERSION="$VERSION" bash "$PROJECT_ROOT/build.command"
 
 echo -e "${GREEN}✓${NC} 빌드 완료"
 
