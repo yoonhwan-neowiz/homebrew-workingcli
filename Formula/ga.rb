@@ -1,7 +1,7 @@
 class Ga < Formula
   desc "Git Assistant - Smart Git workflow optimizer for large repositories"
   homepage "https://github.com/yoonhwan-neowiz/WorkingCli"
-  version ""
+  version "0.1.3"
   license "MIT"
   
   # macOS 플랫폼별 설정

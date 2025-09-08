@@ -117,8 +117,11 @@ PLATFORMS=(
     "linux_arm64"
 )
 
-# SHA256 체크섬 저장 변수
-declare -A SHA256_CHECKSUMS
+# SHA256 체크섬 저장 변수 (일반 변수로 변경)
+SHA256_darwin_amd64=""
+SHA256_darwin_arm64=""
+SHA256_linux_amd64=""
+SHA256_linux_arm64=""
 
 for platform in "${PLATFORMS[@]}"; do
     BINARY_PATH="$PROJECT_ROOT/build/${platform}/${BINARY_NAME}"
@@ -138,7 +141,8 @@ for platform in "${PLATFORMS[@]}"; do
             SHA256=$(sha256sum "$ARCHIVE_PATH" | cut -d ' ' -f 1)
         fi
         
-        SHA256_CHECKSUMS[$platform]="$SHA256"
+        # platform별로 변수에 저장
+        eval "SHA256_${platform}=\"$SHA256\""
         echo -e "${GREEN}✓${NC}"
         echo "     SHA256: ${CYAN}${SHA256}${NC}"
     else
@@ -171,10 +175,10 @@ class Ga < Formula
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/${TAG_NAME}/ga-darwin-arm64.tar.gz"
-      sha256 "${SHA256_CHECKSUMS[darwin_arm64]}"
+      sha256 "${SHA256_darwin_arm64}"
     else
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/${TAG_NAME}/ga-darwin-amd64.tar.gz"
-      sha256 "${SHA256_CHECKSUMS[darwin_amd64]}"
+      sha256 "${SHA256_darwin_amd64}"
     end
   end
 
@@ -182,10 +186,10 @@ class Ga < Formula
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/${TAG_NAME}/ga-linux-arm64.tar.gz"
-      sha256 "${SHA256_CHECKSUMS[linux_arm64]}"
+      sha256 "${SHA256_linux_arm64}"
     else
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/${TAG_NAME}/ga-linux-amd64.tar.gz"
-      sha256 "${SHA256_CHECKSUMS[linux_amd64]}"
+      sha256 "${SHA256_linux_amd64}"
     end
   end
 
@@ -279,8 +283,9 @@ ga opt quick to-slim  # Optimize large repository
 
 # SHA256 체크섬 추가
 for platform in "${PLATFORMS[@]}"; do
-    if [ -n "${SHA256_CHECKSUMS[$platform]}" ]; then
-        RELEASE_NOTES="${RELEASE_NOTES}- ${platform//_/-}: \`${SHA256_CHECKSUMS[$platform]}\`
+    eval "SHA256_VAL=\$SHA256_${platform}"
+    if [ -n "${SHA256_VAL}" ]; then
+        RELEASE_NOTES="${RELEASE_NOTES}- ${platform//_/-}: \`${SHA256_VAL}\`
 "
     fi
 done
