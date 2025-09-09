@@ -8,10 +8,10 @@ class Ga < Formula
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.1.6/ga-darwin-arm64.tar.gz"
-      sha256 "f8b35509580dceb7ed8c95838c76037a06d5c94c643a8e7cd394a903e681bb65"
+      sha256 "8c95f3db047887f6d569b29eadef4ee456fa0110da143606d8d9a8550397f0da"
     else
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.1.6/ga-darwin-amd64.tar.gz"
-      sha256 "97a434568cf0d4b9567123671f15a0f278d2f5603ced3d862a6caa024a9a209b"
+      sha256 "17eb81373108f2002fe89468bfd6f111db9d0606f3dc62768514739e0c8132ae"
     end
   end
 
@@ -19,10 +19,10 @@ class Ga < Formula
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.1.6/ga-linux-arm64.tar.gz"
-      sha256 "e40d6de7d46df337e87335c5cf2acd8ecfc302d594cf69e8444c5faa2cf1001d"
+      sha256 "c549c02880f14e775149afe023c31236514a8c1686adfc2f78a48800035f1d4d"
     else
       url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.1.6/ga-linux-amd64.tar.gz"
-      sha256 "73bb8fc6921b8d9e0a64535973e8ced7245d88d7b5aa02c1a91291d4a5df8f5d"
+      sha256 "11e50bab46dfe2c3ac1a3fba2388b15ba7e790e492488e612f89ce20ec112df4"
     end
   end
 
