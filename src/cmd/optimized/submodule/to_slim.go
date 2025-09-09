@@ -103,15 +103,9 @@ func runToSlim() {
 
 	// 서브모듈 변환 작업 정의
 	toSlimOperation := func(path string) error {
-		// 서브모듈 디렉토리로 이동
-		originalDir, _ := os.Getwd()
-		if err := os.Chdir(path); err != nil {
-			return fmt.Errorf("디렉토리 이동 실패: %v", err)
-		}
-		defer os.Chdir(originalDir)
-
 		// Git 저장소인지 확인 (미초기화 서브모듈 대응)
-		if !utils.IsGitRepository() {
+		cmd := exec.Command("git", "-C", path, "rev-parse", "--git-dir")
+		if err := cmd.Run(); err != nil {
 			mu.Lock()
 			results = append(results, slimResult{path: path, beforeHuman: "미초기화", afterHuman: "미초기화"})
 			mu.Unlock()
@@ -120,50 +114,50 @@ func runToSlim() {
 		}
 
 		// 현재 .git 디렉토리 크기 측정
-		beforeBytes, beforeHuman := utils.GetGitDirSize(".")
+		beforeBytes, beforeHuman := utils.GetGitDirSize(path)
 
 		// 1) Partial Clone 필터 설정 (config에서 읽은 값 사용)
-		exec.Command("git", "config", "remote.origin.partialclonefilter", submoduleFilter).Run()
-		exec.Command("git", "config", "remote.origin.promisor", "true").Run()
-		exec.Command("git", "config", "extensions.partialClone", "origin").Run()
+		exec.Command("git", "-C", path, "config", "remote.origin.partialclonefilter", submoduleFilter).Run()
+		exec.Command("git", "-C", path, "config", "remote.origin.promisor", "true").Run()
+		exec.Command("git", "-C", path, "config", "extensions.partialClone", "origin").Run()
 
 		// 2) Sparse Checkout 활성화
-		exec.Command("git", "config", "core.sparseCheckout", "true").Run()
+		exec.Command("git", "-C", path, "config", "core.sparseCheckout", "true").Run()
 		
 		// sparsePaths 설정에 따라 처리
 		if len(sparsePaths) == 0 || (len(sparsePaths) == 1 && sparsePaths[0] == "*") {
 			// 기본값: cone 모드로 루트만
-			exec.Command("git", "sparse-checkout", "init", "--cone").Run()
-			exec.Command("git", "sparse-checkout", "set", "/").Run()
+			exec.Command("git", "-C", path, "sparse-checkout", "init", "--cone").Run()
+			exec.Command("git", "-C", path, "sparse-checkout", "set", "/").Run()
 		} else {
 			// 사용자 지정 경로가 있는 경우
 			hasFiles := false
-			for _, path := range sparsePaths {
-				if !strings.HasSuffix(path, "/") && strings.Contains(path, ".") {
+			for _, p := range sparsePaths {
+				if !strings.HasSuffix(p, "/") && strings.Contains(p, ".") {
 					hasFiles = true
 					break
 				}
 			}
 			
 			if hasFiles {
-				exec.Command("git", "sparse-checkout", "init", "--no-cone").Run()
+				exec.Command("git", "-C", path, "sparse-checkout", "init", "--no-cone").Run()
 			} else {
-				exec.Command("git", "sparse-checkout", "init", "--cone").Run()
+				exec.Command("git", "-C", path, "sparse-checkout", "init", "--cone").Run()
 			}
 			
-			args := append([]string{"sparse-checkout", "set"}, sparsePaths...)
+			args := append([]string{"-C", path, "sparse-checkout", "set"}, sparsePaths...)
 			exec.Command("git", args...).Run()
 		}
 
 		// 네트워크 반영을 위한 안전한 fetch (필터 반영)
-		exec.Command("git", "fetch", "--prune").Run()
+		exec.Command("git", "-C", path, "fetch", "--prune").Run()
 
 		// 3) 불필요한 객체 정리 및 성능 설정 일부 적용
-		exec.Command("git", "repack", "-a", "-d").Run()
-		exec.Command("git", "maintenance", "run", "--task=gc").Run()
+		exec.Command("git", "-C", path, "repack", "-a", "-d").Run()
+		exec.Command("git", "-C", path, "maintenance", "run", "--task=gc").Run()
 
 		// 전환 후 크기 측정
-		afterBytes, afterHuman := utils.GetGitDirSize(".")
+		afterBytes, afterHuman := utils.GetGitDirSize(path)
 
 		// 결과 기록
 		mu.Lock()

@@ -68,15 +68,18 @@ func runShallow(args []string) {
 
 	// Shallow 변환 작업 정의
 	shallowOperation := func(path string) error {
-		// 서브모듈 디렉토리로 이동
-		originalDir, _ := os.Getwd()
-		if err := os.Chdir(path); err != nil {
-			return fmt.Errorf("디렉토리 이동 실패: %v", err)
+		// 서브모듈 경로가 존재하는지 확인
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			fmt.Printf("⚠️ %s: 서브모듈 경로가 존재하지 않습니다. 초기화가 필요할 수 있습니다.\n", path)
+			// 서브모듈 초기화 시도
+			initCmd := exec.Command("git", "submodule", "update", "--init", "--recursive", path)
+			if err := initCmd.Run(); err != nil {
+				return fmt.Errorf("서브모듈 초기화 실패: %v", err)
+			}
 		}
-		defer os.Chdir(originalDir)
 
 		// 현재 HEAD 커밋 SHA 가져오기 (detached HEAD 처리)
-		headSHACmd := exec.Command("git", "rev-parse", "HEAD")
+		headSHACmd := exec.Command("git", "-C", path, "rev-parse", "HEAD")
 		headSHAOutput, err := headSHACmd.Output()
 		if err != nil {
 			return fmt.Errorf("HEAD 커밋 확인 실패: %v", err)
@@ -84,13 +87,13 @@ func runShallow(args []string) {
 		currentHeadSHA := strings.TrimSpace(string(headSHAOutput))
 		
 		// 현재 shallow 상태 확인
-		isShallowCmd := exec.Command("git", "rev-parse", "--is-shallow-repository")
+		isShallowCmd := exec.Command("git", "-C", path, "rev-parse", "--is-shallow-repository")
 		output, _ := isShallowCmd.Output()
 		isShallow := strings.TrimSpace(string(output)) == "true"
 
 		if isShallow {
 			// 이미 shallow인 경우 depth 확인
-			countCmd := exec.Command("git", "rev-list", "--count", "HEAD")
+			countCmd := exec.Command("git", "-C", path, "rev-list", "--count", "HEAD")
 			countOutput, _ := countCmd.Output()
 			currentDepth := strings.TrimSpace(string(countOutput))
 			
@@ -105,13 +108,13 @@ func runShallow(args []string) {
 		fmt.Printf("🔄 %s: Remote HEAD 기준으로 shallow depth=%d 적용 중...\n", path, depth)
 		
 		// 1. fetch --depth로 remote의 최신 상태를 shallow로 가져옴
-		fetchCmd := exec.Command("git", "fetch", "origin", fmt.Sprintf("--depth=%d", depth), "--update-shallow")
-		if err := fetchCmd.Run(); err != nil {
+		fetchCmd := exec.Command("git", "-C", path, "fetch", "origin", fmt.Sprintf("--depth=%d", depth), "--update-shallow")
+    if err := fetchCmd.Run(); err != nil {
 			// 실패 시 현재 커밋 SHA로 직접 시도
-			fetchSHACmd := exec.Command("git", "fetch", "origin", currentHeadSHA, fmt.Sprintf("--depth=%d", depth))
+			fetchSHACmd := exec.Command("git", "-C", path, "fetch", "origin", currentHeadSHA, fmt.Sprintf("--depth=%d", depth))
 			if err := fetchSHACmd.Run(); err != nil {
 				// 그래도 실패하면 모든 참조를 shallow로 가져오기
-				fetchAllCmd := exec.Command("git", "fetch", "--all", fmt.Sprintf("--depth=%d", depth))
+				fetchAllCmd := exec.Command("git", "-C", path, "fetch", "--all", fmt.Sprintf("--depth=%d", depth))
 				if err := fetchAllCmd.Run(); err != nil {
 					return fmt.Errorf("Shallow fetch 실패: %v", err)
 				}
@@ -121,14 +124,14 @@ func runShallow(args []string) {
 		// 2. 브랜치 동기화를 shallow 변환 후에 실행 (quick/shallow.go처럼)
 		// 현재 브랜치 저장
 		currentBranch := "HEAD"
-		currentBranchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+		currentBranchCmd := exec.Command("git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD")
 		if currentBranchOutput, err := currentBranchCmd.Output(); err == nil {
 			currentBranch = strings.TrimSpace(string(currentBranchOutput))
 		}
 		
 		// 모든 로컬 브랜치를 remote와 동기화 (shallow 상태 적용을 위해)
 		fmt.Printf("   ├─ 로컬 브랜치들을 shallow 상태로 동기화 중...\n")
-		branchListCmd := exec.Command("git", "branch", "--format=%(refname:short)")
+		branchListCmd := exec.Command("git", "-C", path, "branch", "--format=%(refname:short)")
 		if branchOutput, err := branchListCmd.Output(); err == nil {
 			subBranches := strings.Split(strings.TrimSpace(string(branchOutput)), "\n")
 			totalBranches := len(subBranches)
@@ -143,13 +146,13 @@ func runShallow(args []string) {
 				fmt.Printf("   │     ├─ [%d/%d] %s 브랜치 처리 중...", i+1, totalBranches, subBranch)
 				
 				// 각 브랜치를 remote와 동기화
-				checkoutCmd := exec.Command("git", "checkout", subBranch, "-q")
+				checkoutCmd := exec.Command("git", "-C", path, "checkout", subBranch, "-q")
 				if err := checkoutCmd.Run(); err == nil {
 					// remote 브랜치가 있는지 확인
-					remoteVerifyCmd := exec.Command("git", "rev-parse", "--verify", "origin/"+subBranch)
+					remoteVerifyCmd := exec.Command("git", "-C", path, "rev-parse", "--verify", "origin/"+subBranch)
 					if err := remoteVerifyCmd.Run(); err == nil {
 						// reset --hard origin/branch로 shallow 상태 강제 적용
-						resetCmd := exec.Command("git", "reset", "--hard", "origin/"+subBranch)
+						resetCmd := exec.Command("git", "-C", path, "reset", "--hard", "origin/"+subBranch)
 						if err := resetCmd.Run(); err == nil {
 							fmt.Printf(" ✓\n")
 						} else {
@@ -167,7 +170,7 @@ func runShallow(args []string) {
 			fmt.Printf("   │  └─ 원래 상태로 복귀 중...")
 			if currentBranch == "HEAD" {
 				// Detached HEAD 상태였다면 원래 커밋으로
-				checkoutSHACmd := exec.Command("git", "checkout", currentHeadSHA, "-q")
+				checkoutSHACmd := exec.Command("git", "-C", path, "checkout", currentHeadSHA, "-q")
 				if err := checkoutSHACmd.Run(); err == nil {
 					fmt.Printf(" ✓ (커밋: %s)\n", currentHeadSHA[:7])
 				} else {
@@ -175,7 +178,7 @@ func runShallow(args []string) {
 				}
 			} else {
 				// 브랜치였다면 브랜치로
-				checkoutBackCmd := exec.Command("git", "checkout", currentBranch, "-q")
+				checkoutBackCmd := exec.Command("git", "-C", path, "checkout", currentBranch, "-q")
 				if err := checkoutBackCmd.Run(); err == nil {
 					fmt.Printf(" ✓ (브랜치: %s)\n", currentBranch)
 				} else {
@@ -186,7 +189,7 @@ func runShallow(args []string) {
 		
 		// 3. reflog 정리로 이전 히스토리 참조 제거
 		fmt.Printf("   ├─ Reflog 정리 중...")
-		reflogCmd := exec.Command("git", "reflog", "expire", "--expire=now", "--all")
+		reflogCmd := exec.Command("git", "-C", path, "reflog", "expire", "--expire=now", "--all")
 		if err := reflogCmd.Run(); err == nil {
 			fmt.Printf(" ✓\n")
 		} else {
@@ -195,7 +198,7 @@ func runShallow(args []string) {
 		
 		// 4. gc 실행으로 오래된 객체 완전 정리 (--aggressive 추가)
 		fmt.Printf("   ├─ GC로 객체 정리 중 (aggressive)...")
-		gcCmd := exec.Command("git", "gc", "--prune=now", "--aggressive")
+		gcCmd := exec.Command("git", "-C", path, "gc", "--prune=now", "--aggressive")
 		if err := gcCmd.Run(); err == nil {
 			fmt.Printf(" ✓\n")
 		} else {
@@ -207,7 +210,7 @@ func runShallow(args []string) {
 		return nil
 	}
 
-	// 병렬 실행 (최대 4개 작업, recursive 활성화)
+	// 병렬 실행 (git -C 옵션 사용으로 동시 처리 가능)
 	successCount, failCount, err := utils.ExecuteOnSubmodulesParallel(shallowOperation, 4, true)
 
 	// 요약

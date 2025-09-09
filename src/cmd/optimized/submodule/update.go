@@ -113,20 +113,14 @@ func performForceUpdate() {
 
 	// foreach를 사용한 개별 업데이트
 	updateOperation := func(path string) error {
-		originalDir, _ := os.Getwd()
-		if err := os.Chdir(path); err != nil {
-			return fmt.Errorf("디렉토리 이동 실패: %v", err)
-		}
-		defer os.Chdir(originalDir)
-
 		fmt.Printf("📦 %s: 업데이트 중...\n", path)
 		
 		// 먼저 일반 업데이트 시도
-		checkoutCmd := exec.Command("git", "checkout", "-f", "HEAD")
+		checkoutCmd := exec.Command("git", "-C", path, "checkout", "-f", "HEAD")
 		checkoutCmd.Run() // 에러 무시
 		
 		// fetch all
-		fetchCmd := exec.Command("git", "fetch", "--all")
+		fetchCmd := exec.Command("git", "-C", path, "fetch", "--all")
 		if err := fetchCmd.Run(); err != nil {
 			fmt.Printf("  ⚠️ fetch 실패: %v\n", err)
 		}
@@ -135,7 +129,7 @@ func performForceUpdate() {
 		// origin/HEAD 또는 origin/master, origin/main 시도
 		var resetSuccess bool
 		for _, ref := range []string{"origin/HEAD", "origin/master", "origin/main"} {
-			resetCmd := exec.Command("git", "reset", "--hard", ref)
+			resetCmd := exec.Command("git", "-C", path, "reset", "--hard", ref)
 			if err := resetCmd.Run(); err == nil {
 				fmt.Printf("✅ %s: %s로 업데이트 완료\n", path, ref)
 				resetSuccess = true
@@ -145,11 +139,11 @@ func performForceUpdate() {
 		
 		if !resetSuccess {
 			// 리셋 실패 시 최신 커밋으로 시도
-			logCmd := exec.Command("git", "log", "--oneline", "-1", "--remotes")
+			logCmd := exec.Command("git", "-C", path, "log", "--oneline", "-1", "--remotes")
 			if output, err := logCmd.Output(); err == nil {
 				parts := strings.Fields(string(output))
 				if len(parts) > 0 {
-					resetCmd := exec.Command("git", "reset", "--hard", parts[0])
+					resetCmd := exec.Command("git", "-C", path, "reset", "--hard", parts[0])
 					if err := resetCmd.Run(); err == nil {
 						fmt.Printf("✅ %s: 최신 커밋으로 업데이트 완료\n", path)
 						return nil

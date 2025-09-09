@@ -141,50 +141,63 @@ func getSubmoduleStatusInfo(submodulePath string) SubmoduleStatus {
 		Mode: "FULL",
 	}
 	
-	// Enter submodule directory
-	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
-	
-	if err := os.Chdir(submodulePath); err != nil {
-		status.Size = "N/A"
-		return status
-	}
-	
-	// Check if initialized
-	if !utils.IsGitRepository() {
+	// Check if initialized by testing git repository at path
+	cmd := exec.Command("git", "-C", submodulePath, "rev-parse", "--git-dir")
+	if err := cmd.Run(); err != nil {
 		status.Size = "미초기화"
 		status.Mode = "미초기화"
 		return status
 	}
 	
 	// Get .git folder size
-	bytes, human := utils.GetGitDirSize(".")
+	bytes, human := utils.GetGitDirSize(submodulePath)
 	status.Size = human
 	status.SizeBytes = bytes
 	
-	// Check Partial Clone filter
-	status.PartialFilter = utils.GetPartialCloneFilter()
+	// Check Partial Clone filter - needs to be updated to work with path
+	// For now, run git command directly
+	cmd = exec.Command("git", "-C", submodulePath, "config", "remote.origin.partialclonefilter")
+	if output, err := cmd.Output(); err == nil {
+		status.PartialFilter = strings.TrimSpace(string(output))
+	}
 	
 	// Check Sparse Checkout
-	sparseInfo := utils.GetSparseCheckoutInfo()
-	if enabled, ok := sparseInfo["enabled"].(bool); ok {
-		status.SparseEnabled = enabled
-		if count, ok := sparseInfo["count"].(int); ok {
-			status.SparsePaths = count
+	cmd = exec.Command("git", "-C", submodulePath, "config", "core.sparseCheckout")
+	if output, err := cmd.Output(); err == nil {
+		status.SparseEnabled = strings.TrimSpace(string(output)) == "true"
+		if status.SparseEnabled {
+			// Count sparse paths if enabled
+			sparsePath := filepath.Join(submodulePath, ".git", "info", "sparse-checkout")
+			if data, err := os.ReadFile(sparsePath); err == nil {
+				lines := strings.Split(string(data), "\n")
+				count := 0
+				for _, line := range lines {
+					if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "#") {
+						count++
+					}
+				}
+				status.SparsePaths = count
+			}
 		}
 	}
 	
 	// Check Shallow status
-	shallowInfo := utils.GetShallowInfo()
-	if isShallow, ok := shallowInfo["isShallow"].(bool); ok {
-		status.IsShallow = isShallow
-		if depth, ok := shallowInfo["depth"].(int); ok {
-			status.Depth = depth
+	cmd = exec.Command("git", "-C", submodulePath, "rev-parse", "--is-shallow-repository")
+	if output, err := cmd.Output(); err == nil {
+		status.IsShallow = strings.TrimSpace(string(output)) == "true"
+		if status.IsShallow {
+			// Get shallow depth
+			cmd = exec.Command("git", "-C", submodulePath, "rev-list", "--count", "HEAD")
+			if output, err := cmd.Output(); err == nil {
+				if depth, err := strconv.Atoi(strings.TrimSpace(string(output))); err == nil {
+					status.Depth = depth
+				}
+			}
 		}
 	}
 	
 	// Get commit count
-	cmd := exec.Command("git", "rev-list", "--count", "HEAD")
+	cmd = exec.Command("git", "-C", submodulePath, "rev-list", "--count", "HEAD")
 	if output, err := cmd.Output(); err == nil {
 		if count, err := strconv.Atoi(strings.TrimSpace(string(output))); err == nil {
 			status.CommitCount = count

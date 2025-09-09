@@ -64,15 +64,8 @@ func runUnshallow() {
 
 	// Unshallow 작업 정의
 	unshallowOperation := func(path string) error {
-		// 서브모듈 디렉토리로 이동
-		originalDir, _ := os.Getwd()
-		if err := os.Chdir(path); err != nil {
-			return fmt.Errorf("디렉토리 이동 실패: %v", err)
-		}
-		defer os.Chdir(originalDir)
-
 		// 현재 shallow 상태 확인
-		isShallowCmd := exec.Command("git", "rev-parse", "--is-shallow-repository")
+		isShallowCmd := exec.Command("git", "-C", path, "rev-parse", "--is-shallow-repository")
 		output, _ := isShallowCmd.Output()
 		isShallow := strings.TrimSpace(string(output)) == "true"
 
@@ -82,23 +75,23 @@ func runUnshallow() {
 		}
 
 		// 현재 depth 확인
-		countCmd := exec.Command("git", "rev-list", "--count", "HEAD")
+		countCmd := exec.Command("git", "-C", path, "rev-list", "--count", "HEAD")
 		countOutput, _ := countCmd.Output()
 		currentDepth := strings.TrimSpace(string(countOutput))
 		fmt.Printf("📊 %s: Shallow 상태 (depth: %s) → 전체 히스토리 다운로드 중...\n", path, currentDepth)
 		
 		// unshallow 실행
-		fetchCmd := exec.Command("git", "fetch", "--unshallow")
+		fetchCmd := exec.Command("git", "-C", path, "fetch", "--unshallow")
 		if err := fetchCmd.Run(); err != nil {
 			// 실패 시 다른 방법 시도
-			fetchAllCmd := exec.Command("git", "fetch", "--all")
+			fetchAllCmd := exec.Command("git", "-C", path, "fetch", "--all")
 			if err := fetchAllCmd.Run(); err != nil {
 				return fmt.Errorf("히스토리 복원 실패: %v", err)
 			}
 		}
 		
 		// 복원 후 커밋 수 확인
-		countCmd = exec.Command("git", "rev-list", "--count", "HEAD")
+		countCmd = exec.Command("git", "-C", path, "rev-list", "--count", "HEAD")
 		countOutput, _ = countCmd.Output()
 		totalCommits := strings.TrimSpace(string(countOutput))
 		

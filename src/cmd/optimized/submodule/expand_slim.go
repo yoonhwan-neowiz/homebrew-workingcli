@@ -121,15 +121,9 @@ func runExpandSlim() {
 
 	// 서브모듈 경로 확장 작업 정의
 	expandOperation := func(submodulePath string) error {
-		// 서브모듈 디렉토리로 이동
-		originalDir, _ := os.Getwd()
-		if err := os.Chdir(submodulePath); err != nil {
-			return fmt.Errorf("디렉토리 이동 실패: %v", err)
-		}
-		defer os.Chdir(originalDir)
-
 		// Git 저장소인지 확인
-		if !utils.IsGitRepository() {
+		cmd := exec.Command("git", "-C", submodulePath, "rev-parse", "--git-dir")
+		if err := cmd.Run(); err != nil {
 			mu.Lock()
 			results = append(results, expandResult{
 				path:    submodulePath,
@@ -141,37 +135,47 @@ func runExpandSlim() {
 		}
 
 		// Sparse Checkout 상태 확인 및 활성화
-		if !utils.IsSparseCheckoutEnabled() {
-			// 적절한 모드로 초기화
-			utils.InitSparseCheckoutWithMode(paths)
-		} else {
-			// 이미 활성화된 경우에도 필요시 non-cone 모드로 전환
-			existingPaths := utils.GetCurrentSparsePaths()
-			utils.EnsureNonConeMode(paths, existingPaths)
+		cmd = exec.Command("git", "-C", submodulePath, "config", "core.sparseCheckout")
+		output, _ := cmd.Output()
+		if strings.TrimSpace(string(output)) != "true" {
+			// Sparse Checkout 활성화
+			hasFiles := false
+			for _, p := range paths {
+				if !strings.HasSuffix(p, "/") && strings.Contains(p, ".") {
+					hasFiles = true
+					break
+				}
+			}
+			if hasFiles {
+				exec.Command("git", "-C", submodulePath, "sparse-checkout", "init", "--no-cone").Run()
+			} else {
+				exec.Command("git", "-C", submodulePath, "sparse-checkout", "init", "--cone").Run()
+			}
 		}
 
 		// 경로 추가
 		successCount := 0
 		for _, path := range paths {
-			cmd := exec.Command("git", "sparse-checkout", "add", path)
+			cmd := exec.Command("git", "-C", submodulePath, "sparse-checkout", "add", path)
 			if err := cmd.Run(); err == nil {
 				successCount++
 			}
 		}
 
 		// 파일 업데이트
-		exec.Command("git", "read-tree", "-m", "-u", "HEAD").Run()
+		exec.Command("git", "-C", submodulePath, "read-tree", "-m", "-u", "HEAD").Run()
 
 		// Partial Clone 필터가 있는 경우 대용량 파일 다운로드
-		if filter := utils.GetPartialCloneFilter(); filter != "" {
+		cmd = exec.Command("git", "-C", submodulePath, "config", "remote.origin.partialclonefilter")
+		if output, err := cmd.Output(); err == nil && strings.TrimSpace(string(output)) != "" {
 			for _, path := range paths {
-				cmd := exec.Command("git", "ls-files", "--sparse", path)
+				cmd := exec.Command("git", "-C", submodulePath, "ls-files", "--sparse", path)
 				filesOutput, err := cmd.Output()
 				if err == nil && len(filesOutput) > 0 {
 					files := strings.Split(strings.TrimSpace(string(filesOutput)), "\n")
 					for _, file := range files {
 						if file != "" {
-							exec.Command("git", "checkout", "--", file).Run()
+							exec.Command("git", "-C", submodulePath, "checkout", "--", file).Run()
 						}
 					}
 				}

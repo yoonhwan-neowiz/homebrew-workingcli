@@ -2,7 +2,6 @@ package submodule
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -90,15 +89,9 @@ func runToFull() {
 
 	// 서브모듈 복원 작업 정의
 	toFullOperation := func(path string) error {
-		// 서브모듈 디렉토리로 이동
-		originalDir, _ := os.Getwd()
-		if err := os.Chdir(path); err != nil {
-			return fmt.Errorf("디렉토리 이동 실패: %v", err)
-		}
-		defer os.Chdir(originalDir)
-
 		// Git 저장소인지 확인 (미초기화 서브모듈 대응)
-		if !utils.IsGitRepository() {
+		cmd := exec.Command("git", "-C", path, "rev-parse", "--git-dir")
+		if err := cmd.Run(); err != nil {
 			mu.Lock()
 			results = append(results, fullResult{path: path, beforeHuman: "미초기화", afterHuman: "미초기화"})
 			mu.Unlock()
@@ -108,24 +101,24 @@ func runToFull() {
 
 		// 현재 상태 확인
 		wasShallow := false
-		if output, _ := exec.Command("git", "rev-parse", "--is-shallow-repository").Output(); strings.TrimSpace(string(output)) == "true" {
+		if output, _ := exec.Command("git", "-C", path, "rev-parse", "--is-shallow-repository").Output(); strings.TrimSpace(string(output)) == "true" {
 			wasShallow = true
 		}
 
 		wasSparse := false
-		if output, _ := exec.Command("git", "config", "core.sparseCheckout").Output(); strings.TrimSpace(string(output)) == "true" {
+		if output, _ := exec.Command("git", "-C", path, "config", "core.sparseCheckout").Output(); strings.TrimSpace(string(output)) == "true" {
 			wasSparse = true
 		}
 
 		wasPartial := false
-		if output, _ := exec.Command("git", "config", "remote.origin.partialclonefilter").Output(); strings.TrimSpace(string(output)) != "" {
+		if output, _ := exec.Command("git", "-C", path, "config", "remote.origin.partialclonefilter").Output(); strings.TrimSpace(string(output)) != "" {
 			wasPartial = true
 		}
 
 		// 이미 FULL 모드인 경우
 		if !wasShallow && !wasSparse && !wasPartial {
 			mu.Lock()
-			beforeBytes, beforeHuman := utils.GetGitDirSize(".")
+			beforeBytes, beforeHuman := utils.GetGitDirSize(path)
 			results = append(results, fullResult{
 				path:        path,
 				beforeHuman: beforeHuman,
@@ -140,47 +133,47 @@ func runToFull() {
 		}
 
 		// 현재 .git 디렉토리 크기 측정
-		beforeBytes, beforeHuman := utils.GetGitDirSize(".")
+		beforeBytes, beforeHuman := utils.GetGitDirSize(path)
 
 		// 1) Partial Clone 필터 제거
 		if wasPartial {
-			exec.Command("git", "config", "--unset", "remote.origin.partialclonefilter").Run()
-			exec.Command("git", "config", "--unset", "remote.origin.promisor").Run()
-			exec.Command("git", "config", "--unset", "extensions.partialClone").Run()
+			exec.Command("git", "-C", path, "config", "--unset", "remote.origin.partialclonefilter").Run()
+			exec.Command("git", "-C", path, "config", "--unset", "remote.origin.promisor").Run()
+			exec.Command("git", "-C", path, "config", "--unset", "extensions.partialClone").Run()
 		}
 
 		// 2) Sparse Checkout 비활성화
 		if wasSparse {
-			exec.Command("git", "sparse-checkout", "disable").Run()
-			exec.Command("git", "config", "core.sparseCheckout", "false").Run()
+			exec.Command("git", "-C", path, "sparse-checkout", "disable").Run()
+			exec.Command("git", "-C", path, "config", "core.sparseCheckout", "false").Run()
 		}
 
 		// 3) 전체 히스토리 복원
 		if wasShallow {
 			// Shallow 저장소를 완전한 저장소로 변환
-			cmd := exec.Command("git", "fetch", "--unshallow")
+			cmd := exec.Command("git", "-C", path, "fetch", "--unshallow")
 			if err := cmd.Run(); err != nil {
 				// 이미 unshallow 상태일 수 있음
-				exec.Command("git", "fetch", "--all").Run()
+				exec.Command("git", "-C", path, "fetch", "--all").Run()
 			}
 		} else if wasPartial || wasSparse {
 			// Partial Clone이나 Sparse였던 경우 모든 객체 다운로드
-			exec.Command("git", "fetch", "--all", "--prune").Run()
+			exec.Command("git", "-C", path, "fetch", "--all", "--prune").Run()
 		}
 
 		// 4) 작업 트리 재설정 (Sparse Checkout 비활성화 후)
 		if wasSparse {
-			exec.Command("git", "read-tree", "-m", "-u", "HEAD").Run()
-			exec.Command("git", "checkout", ".").Run()
+			exec.Command("git", "-C", path, "read-tree", "-m", "-u", "HEAD").Run()
+			exec.Command("git", "-C", path, "checkout", ".").Run()
 		}
 
 		// 5) 저장소 최적화
-		exec.Command("git", "repack", "-a", "-d", "-f").Run()
-		exec.Command("git", "maintenance", "run", "--task=gc").Run()
-		exec.Command("git", "prune").Run()
+		exec.Command("git", "-C", path, "repack", "-a", "-d", "-f").Run()
+		exec.Command("git", "-C", path, "maintenance", "run", "--task=gc").Run()
+		exec.Command("git", "-C", path, "prune").Run()
 
 		// 복원 후 크기 측정
-		afterBytes, afterHuman := utils.GetGitDirSize(".")
+		afterBytes, afterHuman := utils.GetGitDirSize(path)
 
 		// 결과 기록
 		mu.Lock()
