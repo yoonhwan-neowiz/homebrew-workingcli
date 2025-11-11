@@ -1,28 +1,28 @@
 class Ga < Formula
   desc "Git Assistant - Smart Git workflow optimizer for large repositories"
   homepage "https://github.com/yoonhwan-neowiz/WorkingCli"
-  version "0.2.6"
+  version "0.2.7"
   license "MIT"
   
   # macOS 플랫폼별 설정
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.6/ga-darwin-arm64.tar.gz"
-      sha256 "389bd077fc0cf5fec78d874615663fb65c0b0323eb1170e9e8af7e67650048c4"
+      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.7/ga-darwin-arm64.tar.gz"
+      sha256 "6e59e200db9972cc0f43adf451b01af149c85b61fe53a7daeb58c773c688d843"
     else
-      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.6/ga-darwin-amd64.tar.gz"
-      sha256 "01159e8fdbcaa0c9fd188bf12a00fa921859dc4224f978e190170d3d697bd6a1"
+      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.7/ga-darwin-amd64.tar.gz"
+      sha256 "e5ca74b663d72b4c118dc4ed42e7a103b7ae075055d2afd1a384ad6935776773"
     end
   end
 
   # Linux 플랫폼별 설정
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.6/ga-linux-arm64.tar.gz"
-      sha256 "64a98dbb61efc44e36115a742cbff80d1aea743457c783f284039053a2c75dfc"
+      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.7/ga-linux-arm64.tar.gz"
+      sha256 "dd8003aef58991621343c906dfa4e505e57fbe3396121128f0a291702a911feb"
     else
-      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.6/ga-linux-amd64.tar.gz"
-      sha256 "48c81d93ed8c1f2964894509c9cca7a1ecd36e103e08407d55f9091bbb12bd59"
+      url "https://github.com/yoonhwan-neowiz/homebrew-workingcli/releases/download/v0.2.7/ga-linux-amd64.tar.gz"
+      sha256 "db67013c6e03c4fe76f1286cf4f4923249a29cdf0bdf49153ea039b2f111c5c8"
     end
   end
 
